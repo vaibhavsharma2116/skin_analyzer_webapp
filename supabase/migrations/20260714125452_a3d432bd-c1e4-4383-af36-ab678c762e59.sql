@@ -1,0 +1,1 @@
+CREATE POLICY "Users update own scans" ON public.skin_scans FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
