@@ -48,7 +48,7 @@ const AnalysisResultSchema = z.object({
 export type SkinAnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
 const SYSTEM_PROMPT = `You are SKIN POP, a professional AI dermatology assistant.
-Analyze the user's selfie and return a concise skin assessment.
+Analyze the user's selfie and return a highly personalized skin assessment.
 Base your evaluation on visible cues only: tone evenness, texture, hydration signs,
 oil/shine, pores, redness, dark spots/pigmentation, fine lines, and blemishes.
 You are NOT diagnosing medical conditions — provide cosmetic-grade guidance only.
@@ -70,7 +70,7 @@ Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
     "elasticity": 0-100
   },
   "concerns": [ { "name": short label like "Dark spots", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, ... 2-5 items ],
-  "recommendations": [ "actionable tip", ... 3-5 items ]
+  "recommendations": [ "highly specific product type or active ingredient recommendation tailored to their exact concerns (e.g., 'Use a 2% Salicylic Acid cleanser for visible pores')", ... 3-5 items ]
 }
 
 For metrics, higher = better. E.g. hydration 80 = well hydrated, pores 80 = pores appear tight/minimal, oil_balance 80 = balanced (not oily nor dry).`;
@@ -110,7 +110,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
           role: "user",
           parts: [
             {
-              text: "Analyze this selfie and respond with JSON only. Be strictly consistent: for the same image always return identical numbers. Evaluate methodically feature-by-feature using only visible pixels."
+              text: "Analyze this selfie and respond with JSON only. Be strictly consistent: for the same image always return identical numbers. Evaluate methodically feature-by-feature using only visible pixels. Provide highly personalized product and active ingredient recommendations based specifically on the unique skin concerns detected in this exact image."
             },
             {
               inline_data: {
@@ -123,7 +123,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
       ],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0,
+        temperature: 0.4,
       }
     }),
   });
