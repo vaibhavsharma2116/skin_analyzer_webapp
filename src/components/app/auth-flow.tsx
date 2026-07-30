@@ -265,19 +265,20 @@ export function AuthFlow() {
     setLoading(true);
     setError(null);
 
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/auth`,
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth`,
+      },
     });
 
-    if (result.error) {
-      setError(result.error.message);
+    if (error) {
+      setError(error.message);
       setLoading(false);
       return;
     }
 
-    if (!result.redirected) {
-      setLoading(false);
-    }
+    // Supabase redirects automatically, no need to handle result.redirected
   }
 
   async function handleEmailAuth(event: React.FormEvent<HTMLFormElement>) {
