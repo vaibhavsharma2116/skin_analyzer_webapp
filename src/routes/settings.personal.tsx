@@ -39,7 +39,7 @@ function PersonalInfoPage() {
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => {
       setEmail(data.user?.email ?? "");
-      setPhone((data.user?.phone as string) ?? "");
+      setPhone((data.user?.user_metadata?.phone as string) ?? (data.user?.phone as string) ?? "");
     });
     void fetchProfile()
       .then((p) => {
@@ -71,18 +71,15 @@ function PersonalInfoPage() {
     setMsg(null);
     try {
       await save({ data: form });
-      
       if (phone !== undefined) {
-        const { error: phoneError } = await supabase.auth.updateUser({ phone: phone || undefined });
+        // Save to user_metadata instead of auth.phone to bypass the SMS verification requirement
+        const { error: phoneError } = await supabase.auth.updateUser({ 
+          data: { phone: phone || null } 
+        });
+        
         if (phoneError) {
           console.error("Phone update error:", phoneError);
-          // Don't throw if it's a provider issue, just let them know the profile saved
-          if (phoneError.message.includes("provider not configured") || phoneError.message.includes("Twilio")) {
-            setMsg("Profile saved, but phone number requires SMS setup in Supabase.");
-            return;
-          } else {
-             throw phoneError;
-          }
+          throw phoneError;
         }
       }
 
