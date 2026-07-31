@@ -9,9 +9,8 @@ export const Route = createFileRoute("/api/cron/reminders")({
       POST: async () => {
         try {
           let debugLog = `cwd: ${process.cwd()}\n`;
-          // Fallback to manually read .env if process.env doesn't have it (common in production Nitro builds)
-          if (!process.env.VAPID_PRIVATE_KEY) {
-            try {
+          // Always read .env file manually in production Nitro builds to guarantee variables are loaded
+          try {
               const fs = await import("fs");
               const path = await import("path");
               const envPath = path.resolve(process.cwd(), ".env");
@@ -38,7 +37,6 @@ export const Route = createFileRoute("/api/cron/reminders")({
               console.error("Failed to read .env file fallback", e);
               debugLog += `Fallback error: ${e.message}\n`;
             }
-          }
 
           // Initialize Web Push inside the handler to prevent startup crashes if env vars are missing
           const vapidPublic = process.env['VITE_VAPID_PUBLIC_KEY'];
