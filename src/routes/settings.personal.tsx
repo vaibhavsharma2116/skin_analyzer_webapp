@@ -71,6 +71,21 @@ function PersonalInfoPage() {
     setMsg(null);
     try {
       await save({ data: form });
+      
+      if (phone !== undefined) {
+        const { error: phoneError } = await supabase.auth.updateUser({ phone: phone || undefined });
+        if (phoneError) {
+          console.error("Phone update error:", phoneError);
+          // Don't throw if it's a provider issue, just let them know the profile saved
+          if (phoneError.message.includes("provider not configured") || phoneError.message.includes("Twilio")) {
+            setMsg("Profile saved, but phone number requires SMS setup in Supabase.");
+            return;
+          } else {
+             throw phoneError;
+          }
+        }
+      }
+
       setMsg("Saved successfully");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed to save");
