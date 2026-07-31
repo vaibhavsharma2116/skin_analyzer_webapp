@@ -1,23 +1,21 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Eye, EyeOff, Fingerprint, ShieldAlert, Smartphone, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Fingerprint, ShieldAlert, LogOut, Trash2 } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { QRCodeSVG } from "qrcode.react";
 
 export const Route = createFileRoute("/settings/security")({
   component: SecurityPage,
 });
 
-const STORAGE_KEY = "skinpop.settings.security";
-
-type SecState = { biometric: boolean; twofa: boolean };
-const DEFAULTS: SecState = { biometric: true, twofa: false };
-
 function SecurityPage() {
   const navigate = useNavigate();
-  const [sec, setSec] = useState<SecState>(DEFAULTS);
+  const [twoFaEnabled, setTwoFaEnabled] = useState(false);
+  const [enrolledFactorId, setEnrolledFactorId] = useState<string | null>(null);
+  
   const [curr, setCurr] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -25,19 +23,29 @@ function SecurityPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
+  // MFA Flow States
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const [qrCodeUri, setQrCodeUri] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [setupFactorId, setSetupFactorId] = useState("");
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setSec({ ...DEFAULTS, ...JSON.parse(raw) });
-    } catch {}
+    checkMfaStatus();
   }, []);
 
-  function toggle<K extends keyof SecState>(k: K) {
-    setSec((s) => {
-      const n = { ...s, [k]: !s[k] };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(n)); } catch {}
-      return n;
-    });
+  async function checkMfaStatus() {
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      if (error) throw error;
+      const totpFactors = data.totp || [];
+      const verified = totpFactors.find(f => f.status === "verified");
+      setTwoFaEnabled(!!verified);
+      setEnrolledFactorId(verified?.id || null);
+    } catch (e) {
+      console.error("Failed to check MFA status", e);
+    }
   }
 
   async function updatePassword() {
@@ -57,6 +65,87 @@ function SecurityPage() {
     }
   }
 
+  async function toggleTwoFa() {
+    if (twoFaEnabled) {
+      // Disable MFA
+      if (!enrolledFactorId) return;
+      const confirmDisable = window.confirm("Are you sure you want to disable Two-Factor Authentication?");
+      if (!confirmDisable) return;
+      
+      try {
+        const { error } = await supabase.auth.mfa.unenroll({ factorId: enrolledFactorId });
+        if (error) throw error;
+        setTwoFaEnabled(false);
+        setEnrolledFactorId(null);
+      } catch (e) {
+        alert("Failed to disable 2FA: " + (e as Error).message);
+      }
+    } else {
+      // Enable MFA - Start Setup
+      try {
+        setMfaError("");
+        const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+        if (error) throw error;
+        
+        setSetupFactorId(data.id);
+        setQrCodeUri(data.totp.qr_code);
+        setTotpSecret(data.totp.secret);
+        setShowMfaSetup(true);
+      } catch (e) {
+        alert("Failed to start 2FA setup: " + (e as Error).message);
+      }
+    }
+  }
+
+  async function verifyAndEnableMfa() {
+    setMfaError("");
+    if (!verificationCode || verificationCode.length !== 6) {
+      setMfaError("Please enter a valid 6-digit code.");
+      return;
+    }
+    
+    try {
+      const challenge = await supabase.auth.mfa.challenge({ factorId: setupFactorId });
+      if (challenge.error) throw challenge.error;
+      
+      const verify = await supabase.auth.mfa.verify({
+        factorId: setupFactorId,
+        challengeId: challenge.data.id,
+        code: verificationCode
+      });
+      if (verify.error) throw verify.error;
+      
+      // Success
+      setShowMfaSetup(false);
+      setVerificationCode("");
+      await checkMfaStatus();
+    } catch (e) {
+      setMfaError((e as Error).message);
+    }
+  }
+
+  async function handleSignOut() {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      navigate({ to: "/auth" });
+    }
+  }
+
+  async function handleDeleteAccount() {
+    const confirmDelete = window.prompt("Are you sure? This action is irreversible. Type 'DELETE' to confirm.");
+    if (confirmDelete === "DELETE") {
+      try {
+        const { error } = await supabase.rpc("delete_user_account");
+        if (error) throw error;
+        // Sign out locally
+        await supabase.auth.signOut();
+        navigate({ to: "/auth" });
+      } catch (e) {
+        alert("Failed to delete account. Note: You must run the SQL setup snippet in Supabase first. Error: " + (e as Error).message);
+      }
+    }
+  }
+
   return (
     <DeviceFrame
       title="Account & Security"
@@ -64,7 +153,6 @@ function SecurityPage() {
     >
       <Group title="Change Password">
         <div className="space-y-3 p-4">
-          <PasswordField label="Current Password" value={curr} onChange={setCurr} show={show} toggle={() => setShow(!show)} />
           <PasswordField label="New Password" value={next} onChange={setNext} show={show} toggle={() => setShow(!show)} />
           <PasswordField label="Confirm New Password" value={confirm} onChange={setConfirm} show={show} toggle={() => setShow(!show)} />
           {msg && (
@@ -80,24 +168,50 @@ function SecurityPage() {
 
       <Group title="Security">
         <ToggleRow
-          icon={Fingerprint}
-          label="Biometric Login"
-          desc="Use Face ID / Fingerprint to login"
-          on={sec.biometric}
-          onToggle={() => toggle("biometric")}
-        />
-        <ToggleRow
           icon={ShieldAlert}
           label="Two-Factor Authentication"
           desc="Add extra security to your account"
-          on={sec.twofa}
-          onToggle={() => toggle("twofa")}
+          on={twoFaEnabled}
+          onToggle={toggleTwoFa}
         />
       </Group>
 
+      {/* MFA Setup Modal / Section */}
+      {showMfaSetup && (
+        <div className="mt-4 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+          <h3 className="mb-2 font-semibold text-foreground">Setup 2FA</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Scan this QR code with your Authenticator app (like Google Authenticator or Authy).</p>
+          
+          {/* We parse the URI from Supabase directly instead of rendering it as SVG string if we want, 
+              but Supabase actually returns a valid URI that qrcode.react can use */}
+          <div className="mb-4 flex justify-center rounded-xl bg-white p-4">
+            <QRCodeSVG value={qrCodeUri} size={160} />
+          </div>
+          
+          <p className="mb-4 text-center text-xs text-muted-foreground">
+            Secret: <span className="font-mono text-foreground">{totpSecret}</span>
+          </p>
+          
+          <div className="space-y-2">
+            <Input 
+              type="text" 
+              placeholder="Enter 6-digit code" 
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              maxLength={6}
+            />
+            {mfaError && <p className="text-xs text-coral">{mfaError}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" className="w-full" onClick={() => setShowMfaSetup(false)}>Cancel</Button>
+              <Button className="w-full" onClick={verifyAndEnableMfa}>Verify</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Group title="Account">
-        <RowLink icon={Smartphone} label="Manage Devices" desc="View and manage your logged in devices" />
-        <RowLink icon={Trash2} label="Delete Account" desc="Permanently delete your account and data" danger />
+        <RowLink icon={LogOut} label="Sign Out" desc="Sign out of your account on this device" onClick={handleSignOut} />
+        <RowLink icon={Trash2} label="Delete Account" desc="Permanently delete your account and data" danger onClick={handleDeleteAccount} />
       </Group>
     </DeviceFrame>
   );
@@ -160,11 +274,12 @@ function ToggleRow({
 }
 
 function RowLink({
-  icon: Icon, label, desc, danger,
-}: { icon: typeof Fingerprint; label: string; desc: string; danger?: boolean }) {
+  icon: Icon, label, desc, danger, onClick
+}: { icon: typeof Fingerprint; label: string; desc: string; danger?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-b-0 hover:bg-secondary/40"
     >
       <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${danger ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
