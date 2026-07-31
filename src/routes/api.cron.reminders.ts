@@ -3,18 +3,25 @@ import type {} from "@tanstack/react-start";
 import webPush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
-// Initialize Web Push
-webPush.setVapidDetails(
-  process.env.VAPID_SUBJECT || "mailto:admin@sknpop.ai",
-  process.env.VITE_VAPID_PUBLIC_KEY as string,
-  process.env.VAPID_PRIVATE_KEY as string
-);
-
 export const Route = createFileRoute("/api/cron/reminders")({
   server: {
     handlers: {
       POST: async () => {
         try {
+          // Initialize Web Push inside the handler to prevent startup crashes if env vars are missing
+          const vapidPublic = process.env.VITE_VAPID_PUBLIC_KEY;
+          const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+          
+          if (!vapidPublic || !vapidPrivate) {
+            console.error("Missing VAPID keys for Push Notifications");
+            return new Response("Missing VAPID keys", { status: 500 });
+          }
+
+          webPush.setVapidDetails(
+            process.env.VAPID_SUBJECT || "mailto:admin@sknpop.ai",
+            vapidPublic,
+            vapidPrivate
+          );
           // Initialize Supabase admin client (using service role key to bypass RLS)
           const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
           const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
