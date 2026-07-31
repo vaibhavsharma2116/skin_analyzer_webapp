@@ -8,24 +8,35 @@ export const Route = createFileRoute("/api/cron/reminders")({
     handlers: {
       POST: async () => {
         try {
+          let debugLog = `cwd: ${process.cwd()}\n`;
           // Fallback to manually read .env if process.env doesn't have it (common in production Nitro builds)
           if (!process.env.VAPID_PRIVATE_KEY) {
             try {
               const fs = await import("fs");
               const path = await import("path");
-              const envFile = fs.readFileSync(path.resolve(process.cwd(), ".env"), "utf-8");
-              envFile.split("\n").forEach(line => {
-                const match = line.match(/^([^=]+)=(.*)$/);
-                if (match) {
-                  // Remove quotes if present
-                  let val = match[2].trim();
-                  if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-                  if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
-                  process.env[match[1].trim()] = val;
-                }
-              });
-            } catch (e) {
-              console.error("Failed to read .env file fallback");
+              const envPath = path.resolve(process.cwd(), ".env");
+              debugLog += `envPath: ${envPath}\n`;
+              if (fs.existsSync(envPath)) {
+                const envFile = fs.readFileSync(envPath, "utf-8");
+                let foundKeys = [];
+                envFile.split("\n").forEach(line => {
+                  const match = line.match(/^([^=]+)=(.*)$/);
+                  if (match) {
+                    let key = match[1].trim();
+                    let val = match[2].trim();
+                    if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                    if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+                    process.env[key] = val;
+                    foundKeys.push(key);
+                  }
+                });
+                debugLog += `Parsed keys: ${foundKeys.join(", ")}\n`;
+              } else {
+                debugLog += `File not found at envPath\n`;
+              }
+            } catch (e: any) {
+              console.error("Failed to read .env file fallback", e);
+              debugLog += `Fallback error: ${e.message}\n`;
             }
           }
 
@@ -34,8 +45,8 @@ export const Route = createFileRoute("/api/cron/reminders")({
           const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
           
           if (!vapidPublic || !vapidPrivate) {
-            console.error("Missing VAPID keys for Push Notifications. Public:", !!vapidPublic, "Private:", !!vapidPrivate);
-            return new Response("Missing VAPID keys", { status: 500 });
+            debugLog += `Public: ${!!vapidPublic}, Private: ${!!vapidPrivate}\n`;
+            return new Response(`Missing VAPID keys\nDebug:\n${debugLog}`, { status: 500 });
           }
 
           webPush.setVapidDetails(
