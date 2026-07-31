@@ -49,7 +49,7 @@ function NotificationsSettingsPage() {
     
     // If turning on push_all or any push setting, request permission first
     if (k.startsWith("push_") && nextValue) {
-      if ("Notification" in window) {
+      if ("Notification" in window && "serviceWorker" in navigator) {
         if (Notification.permission !== "granted") {
           const perm = await Notification.requestPermission();
           if (perm !== "granted") {
@@ -57,9 +57,60 @@ function NotificationsSettingsPage() {
             nextValue = false; // Revert the change
           }
         }
+        
+        if (nextValue && k === "push_all") {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const existingSub = await registration.pushManager.getSubscription();
+            
+            if (!existingSub) {
+              const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+              if (publicKey) {
+                const sub = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: publicKey,
+                });
+                
+                const subJson = sub.toJSON();
+                if (subJson.endpoint && subJson.keys) {
+                  const { savePushSubscription } = await import("@/lib/push.functions");
+                  await savePushSubscription({ 
+                    data: {
+                      endpoint: subJson.endpoint,
+                      keys: {
+                        p256dh: subJson.keys.p256dh!,
+                        auth: subJson.keys.auth!,
+                      }
+                    } 
+                  });
+                  toast.success("Push notifications enabled!");
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Failed to subscribe to push", e);
+            toast.error("Failed to enable push notifications");
+          }
+        }
       } else {
         toast.error("Your browser does not support notifications");
         nextValue = false;
+      }
+    }
+    
+    // If disabling push_all, we could unsubscribe, but for now we just toggle the setting
+    if (k === "push_all" && !nextValue) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {
+          const { removePushSubscription } = await import("@/lib/push.functions");
+          await removePushSubscription({ data: { endpoint: existingSub.endpoint } });
+          await existingSub.unsubscribe();
+          toast.success("Push notifications disabled");
+        }
+      } catch (e) {
+        console.error("Failed to unsubscribe", e);
       }
     }
 

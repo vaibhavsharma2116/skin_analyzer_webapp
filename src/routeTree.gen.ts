@@ -70,6 +70,7 @@ import { Route as TipsArticleSlugRouteImport } from './routes/tips.article.$slug
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopPaymentCardRouteImport } from './routes/shop.payment.card'
 import { Route as RemindersIdSnoozeRouteImport } from './routes/reminders.$id.snooze'
+import { Route as ApiCronRemindersRouteImport } from './routes/api.cron.reminders'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminRevenueRouteImport } from './routes/_authenticated/admin.revenue'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin.products'
@@ -385,6 +386,11 @@ const RemindersIdSnoozeRoute = RemindersIdSnoozeRouteImport.update({
   path: '/snooze',
   getParentRoute: () => RemindersIdRoute,
 } as any)
+const ApiCronRemindersRoute = ApiCronRemindersRouteImport.update({
+  id: '/api/cron/reminders',
+  path: '/api/cron/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -508,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/revenue': typeof AuthenticatedAdminRevenueRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/reminders/$id/snooze': typeof RemindersIdSnoozeRoute
   '/shop/payment/card': typeof ShopPaymentCardRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -572,6 +579,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/revenue': typeof AuthenticatedAdminRevenueRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/reminders/$id/snooze': typeof RemindersIdSnoozeRoute
   '/shop/payment/card': typeof ShopPaymentCardRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -646,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRoute
   '/_authenticated/admin/revenue': typeof AuthenticatedAdminRevenueRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/cron/reminders': typeof ApiCronRemindersRoute
   '/reminders/$id/snooze': typeof RemindersIdSnoozeRoute
   '/shop/payment/card': typeof ShopPaymentCardRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -720,6 +729,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/revenue'
     | '/admin/users'
+    | '/api/cron/reminders'
     | '/reminders/$id/snooze'
     | '/shop/payment/card'
     | '/shop/product/$id'
@@ -784,6 +794,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/revenue'
     | '/admin/users'
+    | '/api/cron/reminders'
     | '/reminders/$id/snooze'
     | '/shop/payment/card'
     | '/shop/product/$id'
@@ -857,6 +868,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/revenue'
     | '/_authenticated/admin/users'
+    | '/api/cron/reminders'
     | '/reminders/$id/snooze'
     | '/shop/payment/card'
     | '/shop/product/$id'
@@ -883,6 +895,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TipsRoute: typeof TipsRouteWithChildren
   STokenRoute: typeof STokenRoute
+  ApiCronRemindersRoute: typeof ApiCronRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1314,6 +1327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RemindersIdSnoozeRouteImport
       parentRoute: typeof RemindersIdRoute
     }
+    '/api/cron/reminders': {
+      id: '/api/cron/reminders'
+      path: '/api/cron/reminders'
+      fullPath: '/api/cron/reminders'
+      preLoaderRoute: typeof ApiCronRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/users'
@@ -1628,6 +1648,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TipsRoute: TipsRouteWithChildren,
   STokenRoute: STokenRoute,
+  ApiCronRemindersRoute: ApiCronRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
