@@ -41,8 +41,8 @@ export const Route = createFileRoute("/api/cron/reminders")({
           }
 
           // Initialize Web Push inside the handler to prevent startup crashes if env vars are missing
-          const vapidPublic = process.env.VITE_VAPID_PUBLIC_KEY;
-          const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+          const vapidPublic = process.env['VITE_VAPID_PUBLIC_KEY'];
+          const vapidPrivate = process.env['VAPID_PRIVATE_KEY'];
           
           if (!vapidPublic || !vapidPrivate) {
             debugLog += `Public: ${!!vapidPublic}, Private: ${!!vapidPrivate}\n`;
@@ -55,8 +55,8 @@ export const Route = createFileRoute("/api/cron/reminders")({
             vapidPrivate
           );
           // Initialize Supabase admin client (using service role key to bypass RLS)
-          const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
-          const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+          const supabaseUrl = process.env['VITE_SUPABASE_URL'] as string;
+          const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] as string;
           
           if (!supabaseUrl || !supabaseServiceKey) {
             console.error("Missing Supabase credentials for cron job");
