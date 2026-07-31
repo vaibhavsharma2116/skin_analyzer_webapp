@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BatteryFull, Signal, Wifi } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface DeviceFrameProps {
@@ -24,14 +24,7 @@ export function DeviceFrame({
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl items-center justify-center">
         <div className="w-full max-w-[430px] overflow-hidden rounded-[32px] border border-border/70 bg-card shadow-phone">
           <div className="px-6 pt-4">
-            <div className="flex items-center justify-between text-[13px] font-semibold text-foreground">
-              <span>9:41</span>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Signal className="h-3.5 w-3.5" />
-                <Wifi className="h-3.5 w-3.5" />
-                <BatteryFull className="h-4 w-4" />
-              </div>
-            </div>
+
 
             {(title || leftSlot || rightSlot) && (
               <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 py-5">
