@@ -72,25 +72,29 @@ export const Route = createFileRoute("/api/cron/reminders")({
             hour: '2-digit', 
             minute: '2-digit' 
           };
-          // 'en-GB' format returns HH:MM directly
           let istTime = new Intl.DateTimeFormat('en-GB', options).format(now);
-          // Some environments might return "24:xx" instead of "00:xx" for midnight
           if (istTime.startsWith('24:')) istTime = istTime.replace('24:', '00:');
           
+          console.log(`[CRON ${new Date().toISOString()}] Checking for time: ${istTime}`);
+
           // 1. Fetch active reminders for the current time
           const { data: dueReminders, error: reminderError } = await supabase
             .from("reminders")
             .select("*")
             .eq("active", true)
-            .like("time_of_day", `${istTime}%`);
+            .eq("time_of_day", `${istTime}:00`);
 
           if (reminderError) {
+            console.error(`[CRON ERROR] Reminder fetch failed:`, reminderError);
             throw reminderError;
           }
 
           if (!dueReminders || dueReminders.length === 0) {
+            console.log(`[CRON] No reminders due for ${istTime}`);
             return new Response("No reminders due", { status: 200 });
           }
+
+          console.log(`[CRON] Found ${dueReminders.length} due reminders for ${istTime}.`);
 
           // Get unique user IDs
           const userIds = [...new Set(dueReminders.map(r => r.user_id))];
@@ -102,12 +106,16 @@ export const Route = createFileRoute("/api/cron/reminders")({
             .in("user_id", userIds);
 
           if (subError) {
+            console.error(`[CRON ERROR] Subscriptions fetch failed:`, subError);
             throw subError;
           }
 
           if (!subscriptions || subscriptions.length === 0) {
+            console.log(`[CRON] No subscriptions found for the users.`);
             return new Response("No subscriptions found", { status: 200 });
           }
+
+          console.log(`[CRON] Found ${subscriptions.length} active subscriptions.`);
 
           // 3. Send notifications
           const sendPromises = dueReminders.flatMap((reminder) => {
@@ -133,11 +141,13 @@ export const Route = createFileRoute("/api/cron/reminders")({
                   },
                   payload
                 );
+                console.log(`[CRON] Sent notification to endpoint: ${sub.endpoint.substring(0, 30)}...`);
               } catch (error: any) {
-                console.error("Error sending push notification to", sub.endpoint, error);
+                console.error("[CRON ERROR] Failed to send push to", sub.endpoint.substring(0, 30), error.statusCode);
                 if (error.statusCode === 404 || error.statusCode === 410) {
                   // Subscription has expired or is no longer valid, delete it
                   await supabase
+
                     .from("push_subscriptions")
                     .delete()
                     .eq("endpoint", sub.endpoint);
