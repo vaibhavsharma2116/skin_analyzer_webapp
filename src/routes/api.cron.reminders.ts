@@ -8,12 +8,33 @@ export const Route = createFileRoute("/api/cron/reminders")({
     handlers: {
       POST: async () => {
         try {
+          // Fallback to manually read .env if process.env doesn't have it (common in production Nitro builds)
+          if (!process.env.VAPID_PRIVATE_KEY) {
+            try {
+              const fs = await import("fs");
+              const path = await import("path");
+              const envFile = fs.readFileSync(path.resolve(process.cwd(), ".env"), "utf-8");
+              envFile.split("\n").forEach(line => {
+                const match = line.match(/^([^=]+)=(.*)$/);
+                if (match) {
+                  // Remove quotes if present
+                  let val = match[2].trim();
+                  if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+                  if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+                  process.env[match[1].trim()] = val;
+                }
+              });
+            } catch (e) {
+              console.error("Failed to read .env file fallback");
+            }
+          }
+
           // Initialize Web Push inside the handler to prevent startup crashes if env vars are missing
           const vapidPublic = process.env.VITE_VAPID_PUBLIC_KEY;
           const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
           
           if (!vapidPublic || !vapidPrivate) {
-            console.error("Missing VAPID keys for Push Notifications");
+            console.error("Missing VAPID keys for Push Notifications. Public:", !!vapidPublic, "Private:", !!vapidPrivate);
             return new Response("Missing VAPID keys", { status: 500 });
           }
 
