@@ -77,14 +77,12 @@ export const Route = createFileRoute("/api/cron/reminders")({
           // Some environments might return "24:xx" instead of "00:xx" for midnight
           if (istTime.startsWith('24:')) istTime = istTime.replace('24:', '00:');
           
-          const currentTimeString = `${istTime}:00`;
-
           // 1. Fetch active reminders for the current time
           const { data: dueReminders, error: reminderError } = await supabase
             .from("reminders")
-            .select("id, user_id, name, category")
+            .select("*")
             .eq("active", true)
-            .eq("time_of_day", currentTimeString);
+            .like("time_of_day", `${istTime}%`);
 
           if (reminderError) {
             throw reminderError;
