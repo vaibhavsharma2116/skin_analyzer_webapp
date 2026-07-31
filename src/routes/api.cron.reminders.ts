@@ -63,13 +63,21 @@ export const Route = createFileRoute("/api/cron/reminders")({
 
           const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-          // Get current time in HH:MM format (local time approximation or UTC depending on server)
-          // Note: Since reminders use a specific time_of_day string, we need to match it.
-          // For a global app, timezone handling is needed, but for now we assume the server time matches the user's expected time or we check the current time string.
+          // Get current time in HH:MM format in India Standard Time (IST)
+          // This ensures reminders fire correctly for Indian users regardless of VPS timezone
           const now = new Date();
-          const hh = now.getHours().toString().padStart(2, '0');
-          const mm = now.getMinutes().toString().padStart(2, '0');
-          const currentTimeString = `${hh}:${mm}:00`;
+          const options: Intl.DateTimeFormatOptions = { 
+            timeZone: 'Asia/Kolkata', 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          };
+          // 'en-GB' format returns HH:MM directly
+          let istTime = new Intl.DateTimeFormat('en-GB', options).format(now);
+          // Some environments might return "24:xx" instead of "00:xx" for midnight
+          if (istTime.startsWith('24:')) istTime = istTime.replace('24:', '00:');
+          
+          const currentTimeString = `${istTime}:00`;
 
           // 1. Fetch active reminders for the current time
           const { data: dueReminders, error: reminderError } = await supabase
