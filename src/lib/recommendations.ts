@@ -73,6 +73,49 @@ export function recommendationsFor(scan: ScanRow | null | undefined): RoutinePre
     default:
       break;
   }
+  if (scan?.recommendations && scan.recommendations.length > 0) {
+    const aiAm: RoutineStep[] = [];
+    const aiPm: RoutineStep[] = [];
+    const aiUse: string[] = [];
+    const aiAvoid: string[] = [];
+    const aiTips: string[] = [];
+
+    let amCount = 0;
+    let pmCount = 0;
+
+    for (const rec of scan.recommendations) {
+      if (rec.startsWith("MORNING:")) {
+        const parts = rec.replace("MORNING:", "").split("|").map(s => s.trim());
+        aiAm.push({
+          id: `ai-am-${amCount++}`,
+          title: parts[0] || "Morning Step",
+          hint: parts[1] || "",
+          emoji: parts[2] || "☀️"
+        });
+      } else if (rec.startsWith("EVENING:")) {
+        const parts = rec.replace("EVENING:", "").split("|").map(s => s.trim());
+        aiPm.push({
+          id: `ai-pm-${pmCount++}`,
+          title: parts[0] || "Evening Step",
+          hint: parts[1] || "",
+          emoji: parts[2] || "🌙"
+        });
+      } else if (rec.startsWith("USE:")) {
+        aiUse.push(rec.replace("USE:", "").trim());
+      } else if (rec.startsWith("AVOID:")) {
+        aiAvoid.push(rec.replace("AVOID:", "").trim());
+      } else if (rec.startsWith("LIFESTYLE:")) {
+        aiTips.push(rec.replace("LIFESTYLE:", "").trim());
+      }
+    }
+
+    if (aiAm.length > 0) base.am = aiAm;
+    if (aiPm.length > 0) base.pm = aiPm;
+    if (aiUse.length > 0) base.ingredientsUse = aiUse;
+    if (aiAvoid.length > 0) base.ingredientsAvoid = aiAvoid;
+    if (aiTips.length > 0) base.lifestyleTips = aiTips;
+  }
+
   return base;
 }
 

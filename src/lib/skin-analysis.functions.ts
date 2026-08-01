@@ -30,7 +30,7 @@ const AnalysisResultSchema = z.object({
   overall_score: z.number().int().min(0).max(100),
   skin_age: z.number().int().min(5).max(100),
   skin_type: z.enum(["oily", "dry", "combination", "normal", "sensitive"]),
-  summary: z.string().min(10).max(400),
+  summary: z.string().min(10).max(2000),
   metrics: MetricsSchema,
   concerns: z
     .array(
@@ -42,38 +42,56 @@ const AnalysisResultSchema = z.object({
     )
     .min(2)
     .max(6),
-  recommendations: z.array(z.string().min(4).max(160)).min(3).max(6),
+  recommendations: z.array(z.string().min(4).max(300)).min(3).max(30),
 });
 
 export type SkinAnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
 const SYSTEM_PROMPT = `You are SKIN POP, a professional AI dermatology assistant.
-Analyze the user's selfie and return a highly personalized skin assessment.
-Base your evaluation on visible cues only: tone evenness, texture, hydration signs,
-oil/shine, pores, redness, dark spots/pigmentation, fine lines, and blemishes.
+Analyze the user's selfie and return a highly personalized, detailed skin assessment.
+Base your evaluation on visible cues only: tone evenness, texture, hydration signs, oil/shine, pores, redness, dark spots, fine lines, and blemishes.
 You are NOT diagnosing medical conditions — provide cosmetic-grade guidance only.
-If the image is not a clear human face, still return best-effort estimates but keep
-scores moderate and mention "unclear image" in the summary.
 
 Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
 {
   "overall_score": integer 0-100 (higher = healthier looking skin),
   "skin_age": integer estimated apparent skin age in years,
   "skin_type": "oily" | "dry" | "combination" | "normal" | "sensitive",
-  "summary": short 1-2 sentence overview (max 300 chars),
+  "summary": "A highly detailed 2-3 paragraph explanation of their skin health, what you noticed in the image, what looks good, what can be improved, and why you are recommending specific routines. Be very detailed and encouraging. (max 1500 chars)",
   "metrics": {
-    "hydration": 0-100,
-    "oil_balance": 0-100,
-    "texture": 0-100,
-    "pores": 0-100,
-    "evenness": 0-100,
-    "elasticity": 0-100
+    "hydration": 0-100, "oil_balance": 0-100, "texture": 0-100, "pores": 0-100, "evenness": 0-100, "elasticity": 0-100
   },
   "concerns": [ { "name": short label like "Dark spots", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, ... 2-5 items ],
-  "recommendations": [ "highly specific product type or active ingredient recommendation tailored to their exact concerns (e.g., 'Use a 2% Salicylic Acid cleanser for visible pores')", ... 3-5 items ]
+  "recommendations": [
+    // IMPORTANT: The recommendations array MUST contain items with specific prefixes so the app can parse them.
+    // Format: "PREFIX: Text" or "PREFIX: Title|Hint|Emoji"
+    
+    // Provide exactly 2 to 4 MORNING routine steps:
+    "MORNING: Gentle Cleanser | To remove overnight impurities | 🧼",
+    "MORNING: Vitamin C Serum | For antioxidant protection | 🍊",
+    
+    // Provide exactly 2 to 4 EVENING routine steps:
+    "EVENING: Double Cleanse | To remove sunscreen & makeup | 🫧",
+    "EVENING: Retinol | To target fine lines | 🌙",
+    
+    // Provide 2 to 4 ingredients to USE:
+    "USE: Niacinamide",
+    "USE: Hyaluronic Acid",
+    
+    // Provide 1 to 3 ingredients to AVOID:
+    "AVOID: Heavy coconut oil",
+    "AVOID: Harsh physical scrubs",
+    
+    // Provide 2 to 4 LIFESTYLE tips based on their scan:
+    "LIFESTYLE: Drink at least 8 glasses of water to boost hydration.",
+    
+    // Provide 2 to 4 BULLET points summarizing their skin health:
+    "BULLET: Good hydration levels but visible pores on the nose.",
+    "BULLET: Minor pigmentation issues observed on the cheeks."
+  ]
 }
 
-For metrics, higher = better. E.g. hydration 80 = well hydrated, pores 80 = pores appear tight/minimal, oil_balance 80 = balanced (not oily nor dry).`;
+For metrics, higher = better. E.g. hydration 80 = well hydrated, pores 80 = pores appear tight/minimal, oil_balance 80 = balanced.`;
 
 function hashStringToInt(s: string): number {
   // FNV-1a 32-bit — deterministic seed derived from the image bytes

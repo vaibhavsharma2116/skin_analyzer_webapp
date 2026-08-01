@@ -17,6 +17,7 @@ import { ScoreArc } from "./score-arc";
 import { RadarChart } from "./radar-chart";
 import { METRIC_META, METRIC_ORDER, normalizeMetrics, overallLabel, scoreTone } from "./metric-tokens";
 import type { ScanRow } from "@/lib/skin-analysis.functions";
+import { recommendationsFor } from "@/lib/recommendations";
 
 type TabKey = "overview" | "concerns" | "analysis" | "advice";
 
@@ -102,7 +103,7 @@ function OverviewTab({
     <div className="space-y-5">
       <section>
         <h3 className="text-sm font-semibold">Your Skin Overview</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
           {scan.summary ?? "Here's a quick overview of your skin health based on our AI analysis."}
         </p>
       </section>
@@ -295,7 +296,7 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
 /* ---------------- Advice ---------------- */
 
 function AdviceTab({ scan }: { scan: ScanRow }) {
-  const routines = buildRoutines(scan);
+  const preset = recommendationsFor(scan);
   return (
     <div className="space-y-4">
       <section>
@@ -312,10 +313,13 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             <p className="text-sm font-semibold">Morning Routine</p>
           </div>
           <ol className="mt-2 space-y-1.5 text-sm">
-            {routines.morning.map((step, i) => (
+            {preset.am.map((step, i) => (
               <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline">
                 <span className="text-xs font-semibold text-muted-foreground">{i + 1}.</span>
-                <span>{step}</span>
+                <div>
+                  <span className="font-medium">{step.title}</span>
+                  {step.hint && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+                </div>
               </li>
             ))}
           </ol>
@@ -327,10 +331,13 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             <p className="text-sm font-semibold">Evening Routine</p>
           </div>
           <ol className="mt-2 space-y-1.5 text-sm">
-            {routines.evening.map((step, i) => (
+            {preset.pm.map((step, i) => (
               <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline">
                 <span className="text-xs font-semibold text-muted-foreground">{i + 1}.</span>
-                <span>{step}</span>
+                <div>
+                  <span className="font-medium">{step.title}</span>
+                  {step.hint && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+                </div>
               </li>
             ))}
           </ol>
@@ -340,7 +347,7 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
       <section className="rounded-2xl border border-sage/40 bg-sage/5 p-4">
         <p className="text-sm font-semibold text-sage">Lifestyle Tips</p>
         <ul className="mt-2 space-y-1.5">
-          {(scan.recommendations?.length ? scan.recommendations : DEFAULT_TIPS).map((tip, i) => (
+          {preset.lifestyleTips.map((tip, i) => (
             <li key={i} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 text-sm">
               <CheckCircle2 className="mt-0.5 h-4 w-4 text-sage" />
               <span>{tip}</span>
@@ -481,6 +488,13 @@ function concernDescription(name: string) {
 }
 
 function healthSummary(scan: ScanRow, m: ReturnType<typeof normalizeMetrics>): string[] {
+  const aiBullets = (scan.recommendations ?? [])
+    .filter(r => r.startsWith("BULLET:"))
+    .map(r => r.replace("BULLET:", "").trim());
+    
+  if (aiBullets.length > 0) return aiBullets;
+
+  // Fallback for old scans
   const lines: string[] = [];
   if (m.hydration >= 70) lines.push("Good hydration levels");
   else lines.push("Improve hydration with more water & moisturizer");
