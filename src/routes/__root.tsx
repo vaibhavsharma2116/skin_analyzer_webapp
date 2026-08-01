@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { useRemindersEngine } from "@/hooks/use-reminders-engine";
 import { Toaster } from "@/components/ui/sonner";
+import { PreferencesProvider } from "@/components/preferences-provider";
 
 function NotFoundComponent() {
   return (
@@ -169,8 +170,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      {mounted && <Toaster />}
+      <PreferencesProvider>
+        <Outlet />
+        {mounted && <Toaster />}
+      </PreferencesProvider>
     </QueryClientProvider>
   );
 }

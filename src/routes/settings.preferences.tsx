@@ -1,48 +1,16 @@
-import { useEffect, useState } from "react";
+
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Monitor, Moon, Sun } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
+import { usePreferences, Prefs } from "@/components/preferences-provider";
 
 export const Route = createFileRoute("/settings/preferences")({
   component: PreferencesPage,
 });
 
-const STORAGE_KEY = "skinpop.settings.preferences";
-
-type Prefs = {
-  units: "metric" | "imperial";
-  language: string;
-  theme: "light" | "dark" | "system";
-  useSystem: boolean;
-  audience: "everyone" | "adults" | "teens";
-};
-
-const DEFAULTS: Prefs = {
-  units: "metric",
-  language: "English",
-  theme: "light",
-  useSystem: true,
-  audience: "everyone",
-};
-
 function PreferencesPage() {
   const navigate = useNavigate();
-  const [p, setP] = useState<Prefs>(DEFAULTS);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setP({ ...DEFAULTS, ...JSON.parse(raw) });
-    } catch {}
-  }, []);
-
-  function update<K extends keyof Prefs>(k: K, v: Prefs[K]) {
-    setP((prev) => {
-      const next = { ...prev, [k]: v };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }
+  const { preferences: p, updatePreference: update } = usePreferences();
 
   return (
     <DeviceFrame
