@@ -163,19 +163,6 @@ function RootComponent() {
         console.error("Service Worker registration failed:", err);
       });
     }
-    
-    // Inject Tawk.to Live Chat
-    if (!window.document.getElementById('tawk-to-script')) {
-      const s1 = window.document.createElement("script");
-      s1.id = 'tawk-to-script';
-      s1.async = true;
-      s1.src = 'https://embed.tawk.to/6a6dae1f46ca101d401b5dfd/1juu70ban';
-      s1.charset = 'UTF-8';
-      s1.setAttribute('crossorigin', '*');
-      window.document.head.appendChild(s1);
-      (window as any).Tawk_API = (window as any).Tawk_API || {};
-      (window as any).Tawk_LoadStart = new Date();
-    }
 
     return () => {
       subscription.unsubscribe();
