@@ -135,7 +135,6 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         script.async = true;
         window.document.body.appendChild(script);
       }
-    }
   }, [preferences.language]);
 
   return (
