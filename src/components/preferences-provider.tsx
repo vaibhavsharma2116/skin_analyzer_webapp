@@ -27,6 +27,7 @@ const PreferencesContext = createContext<PreferencesContextType | undefined>(und
 
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
   const [preferences, setPreferences] = useState<Prefs>(DEFAULTS);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Initialize from localStorage
   useEffect(() => {
@@ -36,6 +37,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         setPreferences({ ...DEFAULTS, ...JSON.parse(raw) });
       }
     } catch {}
+    setIsLoaded(true);
   }, []);
 
   // Update logic
@@ -51,6 +53,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   // Side-effects for Theme
   useEffect(() => {
+    if (!isLoaded) return;
     const root = window.document.documentElement;
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     
@@ -78,10 +81,11 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     mediaQuery.addEventListener("change", handleChange);
     
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [preferences.theme, preferences.useSystem]);
+  }, [preferences.theme, preferences.useSystem, isLoaded]);
 
   // Side-effects for Language
   useEffect(() => {
+    if (!isLoaded) return;
     const root = window.document.documentElement;
     const langMap: Record<string, string> = {
       "English": "en",
@@ -121,21 +125,21 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     
     // Clear the reload lock if we're in a stable state
     sessionStorage.removeItem('googtrans_reload');
-      // If we don't need a reload, it means the cookie is correct. 
-      // Now inject the Google Translate script if it's not already there.
-      if (!window.document.getElementById('google-translate-script')) {
-        (window as any).googleTranslateElementInit = () => {
-          if ((window as any).google && (window as any).google.translate) {
-            new (window as any).google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
-          }
-        };
-        const script = window.document.createElement('script');
-        script.id = 'google-translate-script';
-        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-        script.async = true;
-        window.document.body.appendChild(script);
-      }
-  }, [preferences.language]);
+    // If we don't need a reload, it means the cookie is correct. 
+    // Now inject the Google Translate script if it's not already there.
+    if (!window.document.getElementById('google-translate-script')) {
+      (window as any).googleTranslateElementInit = () => {
+        if ((window as any).google && (window as any).google.translate) {
+          new (window as any).google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+        }
+      };
+      const script = window.document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      window.document.body.appendChild(script);
+    }
+  }, [preferences.language, isLoaded]);
 
   return (
     <PreferencesContext.Provider value={{ preferences, updatePreference }}>
