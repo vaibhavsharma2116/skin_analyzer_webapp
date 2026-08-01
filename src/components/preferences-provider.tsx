@@ -91,6 +91,25 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     };
     const code = langMap[preferences.language] || "en";
     root.lang = code;
+
+    // Set Google Translate cookie to auto-translate the whole page
+    const cookieString = code === "en" ? "/en/en" : `/en/${code}`;
+    
+    const currentCookie = document.cookie.split('; ').find(row => row.startsWith('googtrans='));
+    const currentCookieValue = currentCookie ? currentCookie.split('=')[1] : null;
+
+    // If the cookie needs updating to match preferences, update it and reload
+    if (currentCookieValue !== cookieString) {
+      // Clear old cookie formats first
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+      
+      // Set new cookie
+      document.cookie = `googtrans=${cookieString}; path=/;`;
+      document.cookie = `googtrans=${cookieString}; path=/; domain=.${window.location.hostname};`;
+      
+      window.location.reload();
+    }
   }, [preferences.language]);
 
   return (

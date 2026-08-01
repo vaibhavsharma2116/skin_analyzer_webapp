@@ -286,4 +286,11 @@
   .icon-button:hover {
     background: color-mix(in oklab, var(--secondary) 82%, transparent);
   }
-}
+
+/* Hide Google Translate UI */
+.goog-te-banner-frame { display: none !important; }
+body { top: 0px !important; position: static !important; }
+#google_translate_element { display: none !important; }
+.skiptranslate > iframe { display: none !important; }
+.goog-logo-link { display: none !important; }
+.goog-te-gadget { color: transparent !important; }}
