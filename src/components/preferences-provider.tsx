@@ -96,20 +96,31 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     const cookieString = code === "en" ? "/en/en" : `/en/${code}`;
     
     const currentCookie = document.cookie.split('; ').find(row => row.startsWith('googtrans='));
-    const currentCookieValue = currentCookie ? currentCookie.split('=')[1] : null;
+    const currentCookieValue = currentCookie ? decodeURIComponent(currentCookie.split('=')[1]) : null;
 
     // If the cookie needs updating to match preferences, update it and reload
     if (currentCookieValue !== cookieString) {
-      // Clear old cookie formats first
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
-      
-      // Set new cookie
-      document.cookie = `googtrans=${cookieString}; path=/;`;
-      document.cookie = `googtrans=${cookieString}; path=/; domain=.${window.location.hostname};`;
-      
-      window.location.reload();
-    } else {
+      // Guard against infinite reload loops
+      if (sessionStorage.getItem('googtrans_reload') === cookieString) {
+        console.error("Breaking infinite reload loop for Google Translate");
+      } else {
+        sessionStorage.setItem('googtrans_reload', cookieString);
+        
+        // Clear old cookie formats first
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+        
+        // Set new cookie
+        document.cookie = `googtrans=${cookieString}; path=/;`;
+        document.cookie = `googtrans=${cookieString}; path=/; domain=.${window.location.hostname};`;
+        
+        window.location.reload();
+        return; // Stop execution while reloading
+      }
+    }
+    
+    // Clear the reload lock if we're in a stable state
+    sessionStorage.removeItem('googtrans_reload');
       // If we don't need a reload, it means the cookie is correct. 
       // Now inject the Google Translate script if it's not already there.
       if (!window.document.getElementById('google-translate-script')) {
