@@ -101,11 +101,27 @@ function OverviewTab({
 
   return (
     <div className="space-y-5">
-      <section>
-        <h3 className="text-sm font-semibold">Your Skin Overview</h3>
-        <p className="mt-2 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-          {scan.summary ?? "Here's a quick overview of your skin health based on our AI analysis."}
-        </p>
+      <section className="relative overflow-hidden rounded-[24px] border border-primary/20 bg-gradient-to-b from-primary/10 to-transparent p-5">
+        <div className="absolute right-0 top-0 opacity-[0.03] text-primary">
+          <Sparkles className="h-32 w-32 -translate-y-6 translate-x-6" />
+        </div>
+        
+        <div className="relative flex items-center gap-3 mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary shadow-sm">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Clinical AI Assessment</h3>
+            <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">SKIN POP AI Engine</p>
+          </div>
+        </div>
+        
+        <div className="relative z-10">
+          <div className="absolute bottom-0 left-0 top-0 w-0.5 rounded-full bg-primary/30"></div>
+          <p className="pl-4 text-[13px] text-foreground/80 leading-relaxed whitespace-pre-wrap font-medium">
+            {scan.summary ?? "Here's a quick overview of your skin health based on our AI analysis."}
+          </p>
+        </div>
       </section>
 
       <div className="grid grid-cols-2 gap-3">
