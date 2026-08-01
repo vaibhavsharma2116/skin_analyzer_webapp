@@ -35,18 +35,29 @@ function SupportPage() {
       <Group title="Contact Us">
         <Row 
           icon={MessageSquare} 
-          label="WhatsApp Chat" 
-          trailing="Usually replies instantly" 
+          label="Live Chat" 
+          trailing="Usually replies in 5m" 
           onClick={() => {
-            window.open("https://wa.me/917412911516?text=Hi! I have a question about Skin Pop.", "_blank");
+            if (typeof window !== "undefined" && (window as any).Tawk_API) {
+              if ((window as any).Tawk_API.isChatHidden && (window as any).Tawk_API.isChatHidden()) {
+                (window as any).Tawk_API.showWidget();
+              }
+              (window as any).Tawk_API.maximize();
+            } else {
+              import("sonner").then(({ toast }) => {
+                toast.error("Chat widget is still loading...", {
+                  description: "Please wait a few seconds and try again.",
+                });
+              });
+            }
           }} 
         />
         <Row 
           icon={Mail} 
           label="Email Support" 
-          trailing="support@sknpop.ai" 
+          trailing="sknpoppoh@gmail.com" 
           onClick={() => {
-            window.location.href = "mailto:support@sknpop.ai";
+            window.location.href = "mailto:sknpoppoh@gmail.com";
           }}
         />
       </Group>
@@ -64,14 +75,14 @@ function SupportPage() {
           icon={Bug} 
           label="Report an Issue" 
           onClick={() => {
-            window.location.href = "mailto:support@sknpop.ai?subject=Bug Report: SKIN POP App";
+            window.location.href = "mailto:sknpoppoh@gmail.com?subject=Bug Report: SKIN POP App";
           }}
         />
         <Row 
           icon={Send} 
           label="Suggest a Feature" 
           onClick={() => {
-            window.location.href = "mailto:support@sknpop.ai?subject=Feature Suggestion: SKIN POP App";
+            window.location.href = "mailto:sknpoppoh@gmail.com?subject=Feature Suggestion: SKIN POP App";
           }}
         />
       </Group>

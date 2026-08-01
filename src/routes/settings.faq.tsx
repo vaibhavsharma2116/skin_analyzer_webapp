@@ -73,7 +73,7 @@ function FAQPage() {
           <h3 className="mb-2 font-semibold text-primary">Still need help?</h3>
           <p className="mb-4 text-xs text-primary/80">If you couldn't find the answer you were looking for, please reach out to our team.</p>
           <button 
-            onClick={() => window.location.href = "mailto:support@sknpop.ai"}
+            onClick={() => window.location.href = "mailto:sknpoppoh@gmail.com"}
             className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
           >
             Contact Support
