@@ -33,17 +33,51 @@ function SupportPage() {
       </div>
 
       <Group title="Contact Us">
-        <Row icon={MessageSquare} label="Live Chat" trailing="Usually replies in 5m" />
-        <Row icon={Mail} label="Email Support" trailing="support@sknpop.ai" />
+        <Row 
+          icon={MessageSquare} 
+          label="Live Chat" 
+          trailing="Usually replies in 5m" 
+          onClick={() => {
+            import("sonner").then(({ toast }) => {
+              toast.info("Connecting to live chat agent...", {
+                description: "Our support agents are currently busy. Please leave a message or try email support.",
+              });
+            });
+          }} 
+        />
+        <Row 
+          icon={Mail} 
+          label="Email Support" 
+          trailing="support@sknpop.ai" 
+          onClick={() => {
+            window.location.href = "mailto:support@sknpop.ai";
+          }}
+        />
       </Group>
 
       <Group title="Resources">
-        <Row icon={BookOpen} label="FAQ & Guides" />
+        <Row 
+          icon={BookOpen} 
+          label="FAQ & Guides" 
+          onClick={() => navigate({ to: "/settings/faq" })} 
+        />
       </Group>
 
       <Group title="Feedback">
-        <Row icon={Bug} label="Report an Issue" />
-        <Row icon={Send} label="Suggest a Feature" />
+        <Row 
+          icon={Bug} 
+          label="Report an Issue" 
+          onClick={() => {
+            window.location.href = "mailto:support@sknpop.ai?subject=Bug Report: SKIN POP App";
+          }}
+        />
+        <Row 
+          icon={Send} 
+          label="Suggest a Feature" 
+          onClick={() => {
+            window.location.href = "mailto:support@sknpop.ai?subject=Feature Suggestion: SKIN POP App";
+          }}
+        />
       </Group>
 
       <div className="mt-8 flex justify-center pb-8">

@@ -49,6 +49,7 @@ import { Route as SettingsSecurityRouteImport } from './routes/settings.security
 import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsPersonalRouteImport } from './routes/settings.personal'
 import { Route as SettingsNotificationsRouteImport } from './routes/settings.notifications'
+import { Route as SettingsFaqRouteImport } from './routes/settings.faq'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as RemindersNewRouteImport } from './routes/reminders.new'
 import { Route as RemindersCalendarRouteImport } from './routes/reminders.calendar'
@@ -282,6 +283,11 @@ const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsFaqRoute = SettingsFaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
@@ -487,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/reminders/calendar': typeof RemindersCalendarRoute
   '/reminders/new': typeof RemindersNewRoute
   '/s/$token': typeof STokenRoute
+  '/settings/faq': typeof SettingsFaqRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -553,6 +560,7 @@ export interface FileRoutesByTo {
   '/reminders/calendar': typeof RemindersCalendarRoute
   '/reminders/new': typeof RemindersNewRoute
   '/s/$token': typeof STokenRoute
+  '/settings/faq': typeof SettingsFaqRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -629,6 +637,7 @@ export interface FileRoutesById {
   '/reminders/calendar': typeof RemindersCalendarRoute
   '/reminders/new': typeof RemindersNewRoute
   '/s/$token': typeof STokenRoute
+  '/settings/faq': typeof SettingsFaqRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -705,6 +714,7 @@ export interface FileRouteTypes {
     | '/reminders/calendar'
     | '/reminders/new'
     | '/s/$token'
+    | '/settings/faq'
     | '/settings/notifications'
     | '/settings/personal'
     | '/settings/preferences'
@@ -771,6 +781,7 @@ export interface FileRouteTypes {
     | '/reminders/calendar'
     | '/reminders/new'
     | '/s/$token'
+    | '/settings/faq'
     | '/settings/notifications'
     | '/settings/personal'
     | '/settings/preferences'
@@ -846,6 +857,7 @@ export interface FileRouteTypes {
     | '/reminders/calendar'
     | '/reminders/new'
     | '/s/$token'
+    | '/settings/faq'
     | '/settings/notifications'
     | '/settings/personal'
     | '/settings/preferences'
@@ -1190,6 +1202,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof SettingsNotificationsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/faq': {
+      id: '/settings/faq'
+      path: '/faq'
+      fullPath: '/settings/faq'
+      preLoaderRoute: typeof SettingsFaqRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/s/$token': {
@@ -1556,6 +1575,7 @@ const RemindersRouteWithChildren = RemindersRoute._addFileChildren(
 )
 
 interface SettingsRouteChildren {
+  SettingsFaqRoute: typeof SettingsFaqRoute
   SettingsNotificationsRoute: typeof SettingsNotificationsRoute
   SettingsPersonalRoute: typeof SettingsPersonalRoute
   SettingsPreferencesRoute: typeof SettingsPreferencesRoute
@@ -1565,6 +1585,7 @@ interface SettingsRouteChildren {
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsFaqRoute: SettingsFaqRoute,
   SettingsNotificationsRoute: SettingsNotificationsRoute,
   SettingsPersonalRoute: SettingsPersonalRoute,
   SettingsPreferencesRoute: SettingsPreferencesRoute,
