@@ -38,11 +38,18 @@ function SupportPage() {
           label="Live Chat" 
           trailing="Usually replies in 5m" 
           onClick={() => {
-            import("sonner").then(({ toast }) => {
-              toast.info("Connecting to live chat agent...", {
-                description: "Our support agents are currently busy. Please leave a message or try email support.",
+            if (typeof window !== "undefined" && (window as any).Tawk_API) {
+              if ((window as any).Tawk_API.isChatHidden && (window as any).Tawk_API.isChatHidden()) {
+                (window as any).Tawk_API.showWidget();
+              }
+              (window as any).Tawk_API.maximize();
+            } else {
+              import("sonner").then(({ toast }) => {
+                toast.error("Chat widget is still loading...", {
+                  description: "Please wait a few seconds and try again.",
+                });
               });
-            });
+            }
           }} 
         />
         <Row 
