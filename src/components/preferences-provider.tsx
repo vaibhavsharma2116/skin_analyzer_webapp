@@ -109,6 +109,21 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       document.cookie = `googtrans=${cookieString}; path=/; domain=.${window.location.hostname};`;
       
       window.location.reload();
+    } else {
+      // If we don't need a reload, it means the cookie is correct. 
+      // Now inject the Google Translate script if it's not already there.
+      if (!window.document.getElementById('google-translate-script')) {
+        (window as any).googleTranslateElementInit = () => {
+          if ((window as any).google && (window as any).google.translate) {
+            new (window as any).google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+          }
+        };
+        const script = window.document.createElement('script');
+        script.id = 'google-translate-script';
+        script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        script.async = true;
+        window.document.body.appendChild(script);
+      }
     }
   }, [preferences.language]);
 
