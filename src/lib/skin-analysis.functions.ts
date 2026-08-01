@@ -40,8 +40,8 @@ const AnalysisResultSchema = z.object({
         score: z.number().int().min(0).max(100),
       }),
     )
-    .min(2)
-    .max(6),
+    .min(0)
+    .max(25),
   recommendations: z.array(z.string().min(4).max(300)).min(3).max(30),
 });
 
@@ -61,7 +61,14 @@ Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
   "metrics": {
     "hydration": 0-100, "oil_balance": 0-100, "texture": 0-100, "pores": 0-100, "evenness": 0-100, "elasticity": 0-100
   },
-  "concerns": [ { "name": short label like "Dark spots", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, ... 2-5 items ],
+  "concerns": [ 
+    // Identify ALL applicable concerns from this master list: 
+    // Acne (Pimples), Acne Marks / Post-acne Spots, Dark Spots / Hyperpigmentation, Melasma, Dark Circles, 
+    // Eye Bags / Puffy Eyes, Fine Lines, Wrinkles, Open / Enlarged Pores, Blackheads, Whiteheads, 
+    // Redness, Uneven Skin Tone, Dull Skin, Dehydrated Skin, Sun Damage / Tanning, Freckles, Texture / Rough Skin, Facial Asymmetry.
+    { "name": "Dark Circles", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, 
+    ... include ALL detected concerns (0 to 20 items) 
+  ],
   "recommendations": [
     // IMPORTANT: The recommendations array MUST contain items with specific prefixes so the app can parse them.
     // Format: "PREFIX: Text" or "PREFIX: Title|Hint|Emoji"
