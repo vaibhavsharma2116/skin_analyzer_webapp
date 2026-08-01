@@ -101,7 +101,7 @@ function SettingsHome() {
       </Section>
 
       <Section title="Support">
-        <Row icon={HelpCircle} label="Help & Support" />
+        <Row icon={HelpCircle} label="Help & Support" onClick={() => navigate({ to: "/settings/support" })} />
         <Row icon={Star} label="Rate Skin Pop" />
         <Row icon={Info} label="About Skin Pop" trailing="v2.4.0" />
       </Section>

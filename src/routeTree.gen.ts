@@ -44,6 +44,7 @@ import { Route as ShopConfirmedRouteImport } from './routes/shop.confirmed'
 import { Route as ShopCartRouteImport } from './routes/shop.cart'
 import { Route as ShopAddressRouteImport } from './routes/shop.address'
 import { Route as ShopAddedRouteImport } from './routes/shop.added'
+import { Route as SettingsSupportRouteImport } from './routes/settings.support'
 import { Route as SettingsSecurityRouteImport } from './routes/settings.security'
 import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsPersonalRouteImport } from './routes/settings.personal'
@@ -255,6 +256,11 @@ const ShopAddedRoute = ShopAddedRouteImport.update({
   id: '/added',
   path: '/added',
   getParentRoute: () => ShopRoute,
+} as any)
+const SettingsSupportRoute = SettingsSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
   id: '/security',
@@ -485,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/settings/support': typeof SettingsSupportRoute
   '/shop/added': typeof ShopAddedRoute
   '/shop/address': typeof ShopAddressRoute
   '/shop/cart': typeof ShopCartRoute
@@ -550,6 +557,7 @@ export interface FileRoutesByTo {
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/settings/support': typeof SettingsSupportRoute
   '/shop/added': typeof ShopAddedRoute
   '/shop/address': typeof ShopAddressRoute
   '/shop/cart': typeof ShopCartRoute
@@ -625,6 +633,7 @@ export interface FileRoutesById {
   '/settings/personal': typeof SettingsPersonalRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
   '/settings/security': typeof SettingsSecurityRoute
+  '/settings/support': typeof SettingsSupportRoute
   '/shop/added': typeof ShopAddedRoute
   '/shop/address': typeof ShopAddressRoute
   '/shop/cart': typeof ShopCartRoute
@@ -700,6 +709,7 @@ export interface FileRouteTypes {
     | '/settings/personal'
     | '/settings/preferences'
     | '/settings/security'
+    | '/settings/support'
     | '/shop/added'
     | '/shop/address'
     | '/shop/cart'
@@ -765,6 +775,7 @@ export interface FileRouteTypes {
     | '/settings/personal'
     | '/settings/preferences'
     | '/settings/security'
+    | '/settings/support'
     | '/shop/added'
     | '/shop/address'
     | '/shop/cart'
@@ -839,6 +850,7 @@ export interface FileRouteTypes {
     | '/settings/personal'
     | '/settings/preferences'
     | '/settings/security'
+    | '/settings/support'
     | '/shop/added'
     | '/shop/address'
     | '/shop/cart'
@@ -1144,6 +1156,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/added'
       preLoaderRoute: typeof ShopAddedRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/settings/support': {
+      id: '/settings/support'
+      path: '/support'
+      fullPath: '/settings/support'
+      preLoaderRoute: typeof SettingsSupportRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/settings/security': {
       id: '/settings/security'
@@ -1541,6 +1560,7 @@ interface SettingsRouteChildren {
   SettingsPersonalRoute: typeof SettingsPersonalRoute
   SettingsPreferencesRoute: typeof SettingsPreferencesRoute
   SettingsSecurityRoute: typeof SettingsSecurityRoute
+  SettingsSupportRoute: typeof SettingsSupportRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
@@ -1549,6 +1569,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsPersonalRoute: SettingsPersonalRoute,
   SettingsPreferencesRoute: SettingsPreferencesRoute,
   SettingsSecurityRoute: SettingsSecurityRoute,
+  SettingsSupportRoute: SettingsSupportRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
 
