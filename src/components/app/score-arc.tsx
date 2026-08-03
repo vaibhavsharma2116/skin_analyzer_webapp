@@ -6,7 +6,7 @@ import { overallLabel } from "./metric-tokens";
  */
 export function ScoreArc({
   score,
-  size = 200,
+  size = 200, // Expected visual width of the arc
   label,
 }: {
   score: number;
@@ -15,11 +15,18 @@ export function ScoreArc({
 }) {
   const s = Math.max(0, Math.min(100, score));
   const stroke = 14;
-  const padding = 8;
-  const r = (size - stroke - padding * 2) / 2;
-  const cx = size / 2;
-  const cy = size / 2 + padding / 2; // Shift down slightly
-  // half circle from 180deg (left) to 360deg (right); use path arc for progress
+  const p = 4; // Safety padding on all sides to prevent browser clipping
+
+  // The actual viewBox size needed to fit the stroke and padding
+  const svgWidth = size + p * 2;
+  const svgHeight = size / 2 + stroke + p * 2;
+  
+  const cx = svgWidth / 2;
+  // Position cy so that the bottom caps touch the bottom padding
+  const cy = svgHeight - stroke / 2 - p;
+  const r = (size - stroke) / 2;
+
+  // half circle from 180deg (left) to 360deg (right)
   const startX = cx - r;
   const startY = cy;
   const endX = cx + r;
@@ -36,8 +43,8 @@ export function ScoreArc({
   const displayLabel = label ?? overallLabel(s);
 
   return (
-    <div className="relative mx-auto flex items-center justify-center" style={{ width: size, height: size / 2 + 24 }}>
-      <svg width={size} height={size / 2 + padding * 2} viewBox={`0 0 ${size} ${size / 2 + padding * 2}`} className="overflow-visible">
+    <div className="relative mx-auto" style={{ width: svgWidth, height: svgHeight }}>
+      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
         {/* Track */}
         <path
           d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
@@ -57,10 +64,14 @@ export function ScoreArc({
           />
         )}
       </svg>
-      <div className="pointer-events-none absolute inset-x-0 bottom-2 text-center">
-        <div className="text-4xl font-semibold text-foreground">{s}</div>
-        <div className="text-xs text-muted-foreground">/100</div>
-        <div className="text-sm font-semibold" style={{ color: tone }}>{displayLabel}</div>
+      {/* Absolute positioned text in the center */}
+      <div 
+        className="absolute inset-x-0 flex flex-col items-center justify-end pb-1"
+        style={{ top: 0, bottom: p + stroke/2 - 4 }} 
+      >
+        <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">/100</div>
+        <div className="text-[13px] font-semibold mt-0.5" style={{ color: tone }}>{displayLabel}</div>
       </div>
     </div>
   );
