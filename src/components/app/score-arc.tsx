@@ -46,7 +46,6 @@ export function ScoreArc({
         height={svgHeight} 
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="col-start-1 row-start-1 pointer-events-none"
-        style={{ overflow: "visible" }}
       >
         {/* Track */}
         <path
