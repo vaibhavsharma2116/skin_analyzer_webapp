@@ -15,15 +15,13 @@ export function ScoreArc({
 }) {
   const s = Math.max(0, Math.min(100, score));
   const stroke = 14;
-  const p = 16; // Massive 16px padding on all sides to guarantee no clipping
 
+  // Mathematically tight bounding box
+  const svgWidth = size;
+  const svgHeight = size / 2 + stroke / 2;
   const r = (size - stroke) / 2;
-  const cx = r + stroke / 2 + p; // Exact center X
-  const cy = r + stroke / 2 + p; // Exact center Y
-
-  // The actual viewBox size needed to fit the stroke and padding
-  const svgWidth = size + p * 2;
-  const svgHeight = size / 2 + stroke + p * 2;
+  const cx = size / 2;
+  const cy = size / 2;
 
   // half circle from 180deg (left) to 360deg (right)
   const startX = cx - r;
@@ -41,16 +39,14 @@ export function ScoreArc({
     s >= 80 ? "var(--sage)" : s >= 60 ? "var(--primary)" : s >= 40 ? "var(--coral)" : "var(--destructive)";
   const displayLabel = label ?? overallLabel(s);
 
-  // Wrapper maintains the exact visual layout size expected by parent grid
-  // SVG is absolutely positioned and allowed to overflow wrapper safely
   return (
-    <div className="relative mx-auto flex items-end justify-center" style={{ width: size, height: size / 2 + 12 }}>
+    <div className="relative mx-auto" style={{ width: svgWidth, height: svgHeight }}>
       <svg 
         width={svgWidth} 
         height={svgHeight} 
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        className="absolute bottom-0 pointer-events-none"
-        style={{ left: "50%", transform: "translateX(-50%)", overflow: "visible" }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ overflow: "visible" }}
       >
         {/* Track */}
         <path
@@ -71,8 +67,11 @@ export function ScoreArc({
           />
         )}
       </svg>
-      {/* Absolute positioned text resting on the baseline */}
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-1 pointer-events-none">
+      {/* Absolute positioned text resting perfectly on the arc's cy baseline */}
+      <div 
+        className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pointer-events-none" 
+        style={{ paddingBottom: stroke / 2 }}
+      >
         <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
         <div className="text-[11px] font-medium text-muted-foreground mt-1">/100</div>
         <div className="text-[13px] font-bold mt-1 tracking-wide" style={{ color: tone }}>{displayLabel}</div>
