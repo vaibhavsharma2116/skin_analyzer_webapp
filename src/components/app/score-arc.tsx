@@ -40,12 +40,12 @@ export function ScoreArc({
   const displayLabel = label ?? overallLabel(s);
 
   return (
-    <div className="relative mx-auto" style={{ width: svgWidth, height: svgHeight }}>
+    <div className="mx-auto grid" style={{ width: svgWidth, height: svgHeight }}>
       <svg 
         width={svgWidth} 
         height={svgHeight} 
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        className="absolute inset-0 pointer-events-none"
+        className="col-start-1 row-start-1 pointer-events-none"
         style={{ overflow: "visible" }}
       >
         {/* Track */}
@@ -67,9 +67,9 @@ export function ScoreArc({
           />
         )}
       </svg>
-      {/* Absolute positioned text resting perfectly on the arc's cy baseline */}
+      {/* Grid overlapping text resting perfectly on the arc's cy baseline */}
       <div 
-        className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pointer-events-none" 
+        className="col-start-1 row-start-1 flex flex-col items-center justify-end pointer-events-none" 
         style={{ paddingBottom: stroke / 2 }}
       >
         <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
