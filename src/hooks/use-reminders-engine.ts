@@ -118,10 +118,24 @@ export function useRemindersEngine() {
             // Trigger OS Notification if permitted
             if ("Notification" in window && Notification.permission === "granted") {
               try {
-                new Notification(`Reminder: ${r.name}`, {
-                  body: `It's time for your ${r.category.toLowerCase()} reminder.`,
-                  icon: "/icon-192.png",
-                });
+                if ("serviceWorker" in navigator) {
+                  navigator.serviceWorker.ready.then((registration) => {
+                    registration.showNotification(`Reminder: ${r.name}`, {
+                      body: `It's time for your ${r.category.toLowerCase()} reminder.`,
+                      icon: "/icon-192.png",
+                      badge: "/icon-192.png",
+                      vibrate: [200, 100, 200],
+                      requireInteraction: true,
+                      data: { url: "/reminders" },
+                    });
+                  });
+                } else {
+                  new Notification(`Reminder: ${r.name}`, {
+                    body: `It's time for your ${r.category.toLowerCase()} reminder.`,
+                    icon: "/icon-192.png",
+                    requireInteraction: true,
+                  });
+                }
               } catch (e) {
                 console.error("Failed to show browser notification", e);
               }
