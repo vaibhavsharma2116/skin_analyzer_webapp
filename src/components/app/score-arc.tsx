@@ -6,7 +6,7 @@ import { overallLabel } from "./metric-tokens";
  */
 export function ScoreArc({
   score,
-  size = 200, // Expected visual width of the arc
+  size = 200, // Visual size of the component
   label,
 }: {
   score: number;
@@ -15,16 +15,15 @@ export function ScoreArc({
 }) {
   const s = Math.max(0, Math.min(100, score));
   const stroke = 14;
-  const p = 4; // Safety padding on all sides to prevent browser clipping
+  const p = 16; // Massive 16px padding on all sides to guarantee no clipping
+
+  const r = (size - stroke) / 2;
+  const cx = r + stroke / 2 + p; // Exact center X
+  const cy = r + stroke / 2 + p; // Exact center Y
 
   // The actual viewBox size needed to fit the stroke and padding
   const svgWidth = size + p * 2;
   const svgHeight = size / 2 + stroke + p * 2;
-  
-  const cx = svgWidth / 2;
-  // Position cy so that the bottom caps touch the bottom padding
-  const cy = svgHeight - stroke / 2 - p;
-  const r = (size - stroke) / 2;
 
   // half circle from 180deg (left) to 360deg (right)
   const startX = cx - r;
@@ -42,9 +41,17 @@ export function ScoreArc({
     s >= 80 ? "var(--sage)" : s >= 60 ? "var(--primary)" : s >= 40 ? "var(--coral)" : "var(--destructive)";
   const displayLabel = label ?? overallLabel(s);
 
+  // Wrapper maintains the exact visual layout size expected by parent grid
+  // SVG is absolutely positioned and allowed to overflow wrapper safely
   return (
-    <div className="relative mx-auto" style={{ width: svgWidth, height: svgHeight }}>
-      <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`}>
+    <div className="relative mx-auto flex items-end justify-center" style={{ width: size, height: size / 2 + 12 }}>
+      <svg 
+        width={svgWidth} 
+        height={svgHeight} 
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        className="absolute bottom-0 pointer-events-none"
+        style={{ left: "50%", transform: "translateX(-50%)", overflow: "visible" }}
+      >
         {/* Track */}
         <path
           d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
@@ -64,14 +71,11 @@ export function ScoreArc({
           />
         )}
       </svg>
-      {/* Absolute positioned text in the center */}
-      <div 
-        className="absolute inset-x-0 flex flex-col items-center justify-end pb-1"
-        style={{ top: 0, bottom: p + stroke/2 - 4 }} 
-      >
+      {/* Absolute positioned text resting on the baseline */}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-1 pointer-events-none">
         <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
-        <div className="text-xs text-muted-foreground mt-0.5">/100</div>
-        <div className="text-[13px] font-semibold mt-0.5" style={{ color: tone }}>{displayLabel}</div>
+        <div className="text-[11px] font-medium text-muted-foreground mt-1">/100</div>
+        <div className="text-[13px] font-bold mt-1 tracking-wide" style={{ color: tone }}>{displayLabel}</div>
       </div>
     </div>
   );
