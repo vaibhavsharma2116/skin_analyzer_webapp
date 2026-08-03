@@ -15,9 +15,10 @@ export function ScoreArc({
 }) {
   const s = Math.max(0, Math.min(100, score));
   const stroke = 14;
-  const r = (size - stroke) / 2;
+  const padding = 8;
+  const r = (size - stroke - padding * 2) / 2;
   const cx = size / 2;
-  const cy = size / 2;
+  const cy = size / 2 + padding / 2; // Shift down slightly
   // half circle from 180deg (left) to 360deg (right); use path arc for progress
   const startX = cx - r;
   const startY = cy;
@@ -28,15 +29,15 @@ export function ScoreArc({
   const angle = Math.PI * (1 - s / 100); // 180deg → 0deg
   const px = cx + r * Math.cos(angle);
   const py = cy - r * Math.sin(angle);
-  const largeArc = 0;
+  const largeArc = s > 50 ? 1 : 0;
 
   const tone =
     s >= 80 ? "var(--sage)" : s >= 60 ? "var(--primary)" : s >= 40 ? "var(--coral)" : "var(--destructive)";
   const displayLabel = label ?? overallLabel(s);
 
   return (
-    <div className="relative mx-auto" style={{ width: size, height: size / 2 + 24 }}>
-      <svg width={size} height={size / 2 + 8} viewBox={`0 0 ${size} ${size / 2 + 8}`}>
+    <div className="relative mx-auto flex items-center justify-center" style={{ width: size, height: size / 2 + 24 }}>
+      <svg width={size} height={size / 2 + padding * 2} viewBox={`0 0 ${size} ${size / 2 + padding * 2}`} className="overflow-visible">
         {/* Track */}
         <path
           d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
