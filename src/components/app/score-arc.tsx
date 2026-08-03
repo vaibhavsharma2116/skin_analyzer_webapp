@@ -15,13 +15,14 @@ export function ScoreArc({
 }) {
   const s = Math.max(0, Math.min(100, score));
   const stroke = 14;
+  const pad = 8; // 8px safe zone on all sides to prevent stroke clipping
 
-  // Mathematically tight bounding box
-  const svgWidth = size;
-  const svgHeight = size / 2 + stroke / 2;
+  // Mathematically tight bounding box + padding
+  const svgWidth = size + pad * 2;
+  const svgHeight = size / 2 + stroke / 2 + pad * 2;
   const r = (size - stroke) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
+  const cx = svgWidth / 2;
+  const cy = size / 2 + pad;
 
   // half circle from 180deg (left) to 360deg (right)
   const startX = cx - r;
@@ -47,6 +48,8 @@ export function ScoreArc({
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="col-start-1 row-start-1 pointer-events-none"
       >
+        {/* Invisible rect to force WebView geometry bounds */}
+        <rect width="100%" height="100%" fill="transparent" />
         {/* Track */}
         <path
           d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
