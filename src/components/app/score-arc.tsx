@@ -41,12 +41,12 @@ export function ScoreArc({
   const displayLabel = label ?? overallLabel(s);
 
   return (
-    <div className="mx-auto grid" style={{ width: svgWidth, height: svgHeight }}>
+    <div className="relative mx-auto" style={{ width: svgWidth, height: svgHeight }}>
       <svg 
         width={svgWidth} 
         height={svgHeight} 
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        className="col-start-1 row-start-1 pointer-events-none"
+        className="pointer-events-none"
       >
         {/* Invisible rect to force WebView geometry bounds */}
         <rect width="100%" height="100%" fill="transparent" />
@@ -69,10 +69,10 @@ export function ScoreArc({
           />
         )}
       </svg>
-      {/* Grid overlapping text resting perfectly on the arc's cy baseline */}
+      {/* Absolute positioned text resting perfectly on the arc's cy baseline */}
       <div 
-        className="col-start-1 row-start-1 flex flex-col items-center justify-end pointer-events-none" 
-        style={{ paddingBottom: stroke / 2 }}
+        className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pointer-events-none" 
+        style={{ paddingBottom: stroke / 2 + pad }}
       >
         <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
         <div className="text-[11px] font-medium text-muted-foreground mt-1">/100</div>
