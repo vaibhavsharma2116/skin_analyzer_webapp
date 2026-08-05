@@ -38,7 +38,7 @@ function TipsHome() {
             { label: "History", icon: History, onClick: () => navigate({ to: "/history" }) },
             { label: "Scan", icon: ScanFace, onClick: () => navigate({ to: "/scan" }) },
             { label: "Tips", icon: Sparkles, active: true, onClick: () => {} },
-            { label: "Profile", icon: UserRound, onClick: () => {} },
+            { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
           ].map((item) => (
             <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
               <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>

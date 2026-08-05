@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bell, BookOpenText, CalendarDays, ChevronRight, History, Home, Loader2, Moon, Plus, ScanFace, Sun, UserRound } from "lucide-react";
+import { ArrowLeft, Bell, BookOpenText, CalendarDays, ChevronRight, History, Home, Loader2, Moon, Plus, ScanFace, Sun, UserRound, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -100,8 +100,8 @@ function RemindersDashboard() {
             { label: "Home", icon: Home, onClick: () => navigate({ to: "/dashboard" }) },
             { label: "History", icon: History, onClick: () => navigate({ to: "/history" }) },
             { label: "Scan", icon: ScanFace, onClick: () => navigate({ to: "/scan" }) },
-            { label: "Reminders", icon: Bell, active: true, onClick: () => {} },
-            { label: "Profile", icon: UserRound, onClick: () => {} },
+            { label: "Tips", icon: Sparkles, onClick: () => navigate({ to: "/tips" }) },
+            { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
           ].map((item) => (
             <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
               <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>

@@ -16,6 +16,8 @@ import {
   Sun,
   Trash2,
   X,
+  Home,
+  UserRound,
 } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
@@ -157,11 +159,11 @@ function HistoryPage() {
       footer={
         <div className="grid grid-cols-5 gap-2 text-center text-[11px] text-muted-foreground">
           {[
-            { label: "Home", icon: Sparkles, onClick: () => navigate({ to: "/dashboard" }) },
+            { label: "Home", icon: Home, onClick: () => navigate({ to: "/dashboard" }) },
             { label: "History", icon: ClipboardList, active: true, onClick: () => {} },
             { label: "Scan", icon: ScanFace, onClick: () => navigate({ to: "/scan" }) },
-            { label: "Tips", icon: Sparkles, onClick: () => {} },
-            { label: "Menu", icon: SlidersHorizontal, onClick: () => setFiltersOpen(true) },
+            { label: "Tips", icon: Sparkles, onClick: () => navigate({ to: "/tips" }) },
+            { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
           ].map((item) => (
             <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
               <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>

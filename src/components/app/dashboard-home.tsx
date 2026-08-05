@@ -185,7 +185,7 @@ export function DashboardHome({ profile, latest, onSignOut }: DashboardHomeProps
             { label: "Home", icon: Home, active: true, onClick: () => {} },
             { label: "History", icon: History, onClick: goHistory },
             { label: "Scan", icon: ScanFace, onClick: goScan },
-            { label: "Reminders", icon: Bell, onClick: () => navigate({ to: "/reminders" }) },
+            { label: "Tips", icon: Sparkles, onClick: () => navigate({ to: "/tips" }) },
             { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
           ].map((item) => (
             <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
