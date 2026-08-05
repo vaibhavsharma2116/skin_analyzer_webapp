@@ -39,11 +39,11 @@ export function ScanResultsView({
     <div className="space-y-5">
       {/* Top Summary Card — gauge + scan meta */}
       <div className="rounded-[28px] border border-border/70 bg-card p-4 shadow-sm">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
+        <div className="flex flex-col min-[380px]:grid min-[380px]:grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
           <div className="shrink-0">
             <ScoreArc score={scan.overall_score} size={148} />
           </div>
-          <dl className="space-y-2 text-xs">
+          <dl className="w-full space-y-2 text-xs">
             <MetaRow label="Scan Date" value={fmtDateShort(scan.created_at)} />
             <MetaRow label="Skin Type" value={scan.skin_type ? cap(scan.skin_type) : "—"} />
             <MetaRow label="Scan ID" value={scanIdShort(scan.id, scan.created_at)} mono />
@@ -52,13 +52,13 @@ export function ScanResultsView({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-border/70">
+      <div className="flex items-center gap-1 border-b border-border/70 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {(["overview", "concerns", "analysis", "advice"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`relative flex-1 px-2 py-2.5 text-sm font-semibold capitalize transition-colors ${
+            className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-semibold capitalize transition-colors ${
               tab === t ? "text-primary" : "text-muted-foreground"
             }`}
           >
@@ -124,7 +124,7 @@ function OverviewTab({
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SummaryTile label="Skin Score" value={`${scan.overall_score}`} suffix="/100" tone={scoreT} bar={scan.overall_score} />
         <SummaryTile label="Skin Age" value={`${scan.skin_age ?? "—"}`} suffix="years" />
         <SummaryTile label="Hydration" value={hydT.label} tone={hydT} bar={metrics.hydration} valueSize="lg" />
@@ -223,19 +223,21 @@ function ConcernsTab({ scan }: { scan: ScanRow }) {
         {scan.concerns?.length ? (
           scan.concerns.map((c, i) => (
             <div key={`${c.name}-${i}`} className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
-                <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <ConcernIcon name={c.name} className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">{c.name}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{concernDescription(c.name)}</p>
+              <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <span className="mt-0.5 shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <ConcernIcon name={c.name} className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">{c.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{concernDescription(c.name)}</p>
+                  </div>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}>
                   {c.severity}
                 </span>
               </div>
-              <div className="mt-3 flex items-center gap-3">
+              <div className="mt-4 flex items-center gap-3 border-t border-border/50 pt-3">
                 <span className="text-[11px] text-muted-foreground">Severity</span>
                 <SeverityDots score={c.score} />
                 <span className="ml-auto text-[11px] font-semibold text-muted-foreground">{c.score}%</span>
@@ -275,7 +277,7 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
             const tone = scoreTone(v);
             const Icon = meta.icon;
             return (
-              <li key={k} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <li key={k} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-3 first:pt-0 last:pb-0">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
