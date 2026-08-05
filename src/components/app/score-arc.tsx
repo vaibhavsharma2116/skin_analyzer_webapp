@@ -69,12 +69,12 @@ export function ScoreArc({
           />
         )}
       </svg>
-      {/* Absolute positioned text resting perfectly on the arc's cy baseline */}
+      {/* Absolute positioned text resting inside the arc */}
       <div 
         className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pointer-events-none" 
-        style={{ paddingBottom: stroke / 2 + pad }}
+        style={{ paddingBottom: stroke / 2 }}
       >
-        <div className="text-[36px] font-bold text-foreground leading-none">{s}</div>
+        <div className="text-[36px] font-bold text-foreground leading-none mt-4">{s}</div>
         <div className="text-[11px] font-medium text-muted-foreground mt-1">/100</div>
         <div className="text-[13px] font-bold mt-1 tracking-wide" style={{ color: tone }}>{displayLabel}</div>
       </div>
