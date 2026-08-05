@@ -62,6 +62,7 @@ export function AdminSidebar() {
               })}
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
