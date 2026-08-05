@@ -115,7 +115,7 @@ function HamburgerMenu({ onSignOut }: { onSignOut: () => void }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button className="icon-button" aria-label="Menu">
+        <button id="hamburger-menu-trigger" className="icon-button" aria-label="Menu">
           <Menu className="h-4 w-4" />
         </button>
       </SheetTrigger>
@@ -239,6 +239,7 @@ export function DashboardHome({ profile, latest, onSignOut }: DashboardHomeProps
         <MenuRow icon={History} title="History" subtitle="Compare progress and revisit past scans" onClick={goHistory} />
         <MenuRow icon={BookOpenText} title="Tips" subtitle="Articles, routines, and expert guidance" onClick={() => navigate({ to: "/tips" })} />
         <MenuRow icon={ShoppingBag} title="Shop" subtitle="Curated skincare & sunscreen products" onClick={() => navigate({ to: "/shop" })} />
+        <MenuRow icon={Menu} title="Menu" subtitle="Profile, settings, recommendations, and more" onClick={() => document.getElementById("hamburger-menu-trigger")?.click()} />
       </div>
     </DeviceFrame>
   );

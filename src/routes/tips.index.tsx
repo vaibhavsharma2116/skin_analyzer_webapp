@@ -35,9 +35,32 @@ function TipsHome() {
     ...CATEGORIES.map((c) => ({ key: c.key, label: c.shortLabel, icon: c.icon })),
   ];
 
+  const footerMenu = (
+    <div className="grid grid-cols-5 gap-2 text-center text-[11px] text-muted-foreground">
+      {[
+        { label: "Home", icon: Home, onClick: () => navigate({ to: "/dashboard" }) },
+        { label: "History", icon: History, onClick: () => navigate({ to: "/history" }) },
+        { label: "Scan", icon: ScanFace, onClick: () => navigate({ to: "/scan" }) },
+        { label: "Tips", icon: Sparkles, active: true, onClick: () => {} },
+        { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
+      ].map((item) => (
+        <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
+            <item.icon className="h-4 w-4" />
+          </div>
+          <span className={`font-medium ${item.active ? "text-primary" : ""}`}>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if (articles.length === 0) {
     return (
-      <DeviceFrame title="Tips & Articles">
+      <DeviceFrame 
+        title="Tips & Articles"
+        leftSlot={<button className="icon-button" aria-label="Menu" onClick={() => navigate({ to: "/dashboard" })}><Home className="h-4 w-4" /></button>}
+        footer={footerMenu}
+      >
         <div className="flex h-full flex-col items-center justify-center p-6 text-center">
           <p className="mb-4 text-lg font-semibold">Database is empty</p>
           <Button onClick={async () => {
@@ -59,24 +82,7 @@ function TipsHome() {
       title="Tips & Articles"
       leftSlot={<button className="icon-button" aria-label="Menu" onClick={() => navigate({ to: "/dashboard" })}><Home className="h-4 w-4" /></button>}
       rightSlot={<button className="icon-button" aria-label="Notifications"><Bell className="h-4 w-4" /></button>}
-      footer={
-        <div className="grid grid-cols-5 gap-2 text-center">
-          {[
-            { label: "Home", icon: Home, onClick: () => navigate({ to: "/dashboard" }) },
-            { label: "History", icon: History, onClick: () => navigate({ to: "/history" }) },
-            { label: "Scan", icon: ScanFace, onClick: () => navigate({ to: "/scan" }) },
-            { label: "Tips", icon: Sparkles, active: true, onClick: () => {} },
-            { label: "Profile", icon: UserRound, onClick: () => navigate({ to: "/settings" }) },
-          ].map((item) => (
-            <button key={item.label} type="button" onClick={item.onClick} className="flex flex-col items-center gap-1">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}>
-                <item.icon className="h-4 w-4" />
-              </div>
-              <span className={`text-[10px] font-medium ${item.active ? "text-primary" : "text-muted-foreground"}`}>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      }
+      footer={footerMenu}
     >
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
