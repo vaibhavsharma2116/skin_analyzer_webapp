@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   TrendingUp,
   BarChart3,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,6 +60,19 @@ export function AdminSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to App</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -9,7 +9,7 @@ import type { ArticleSection } from "@/lib/tips-content";
 export const Route = createFileRoute("/tips/article/$slug")({
   loader: async ({ params }) => {
     const fn = getArticleBySlug;
-    const article = await fn(params.slug);
+    const article = await fn({ data: params.slug });
     if (!article) throw notFound();
     return { article };
   },

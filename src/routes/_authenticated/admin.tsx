@@ -91,19 +91,19 @@ function AdminLayout() {
       <div className="flex min-h-screen w-full bg-muted/30">
         <AdminSidebar />
         <div className="flex flex-1 flex-col">
-          <header className="flex h-14 items-center gap-3 border-b bg-background px-4">
+          <header className="flex h-14 items-center gap-3 border-b bg-background px-4 shrink-0">
             <SidebarTrigger />
-            <div className="font-semibold">SKIN POP Admin</div>
+            <div className="font-semibold truncate">SKIN POP Admin</div>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
+              <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })} className="hidden sm:flex">
                 View app
               </Button>
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="hidden sm:flex">
                 Sign out
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
             <Outlet />
           </main>
         </div>
