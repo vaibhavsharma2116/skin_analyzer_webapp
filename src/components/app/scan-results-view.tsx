@@ -40,8 +40,8 @@ export function ScanResultsView({
       {/* Top Summary Card — gauge + scan meta */}
       <div className="rounded-[28px] border border-border/70 bg-card p-4 shadow-sm">
         <div className="flex flex-col min-[380px]:grid min-[380px]:grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
-          <div className="shrink-0">
-            <ScoreArc score={scan.overall_score} size={148} />
+          <div className="py-2">
+            <ScoreArc score={scan.overall_score} size={180} />
           </div>
           <dl className="w-full space-y-2 text-xs">
             <MetaRow label="Scan Date" value={fmtDateShort(scan.created_at)} />

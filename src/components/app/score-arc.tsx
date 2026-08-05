@@ -34,7 +34,7 @@ export function ScoreArc({
   const angle = Math.PI * (1 - s / 100); // 180deg → 0deg
   const px = cx + r * Math.cos(angle);
   const py = cy - r * Math.sin(angle);
-  const largeArc = s > 50 ? 1 : 0;
+  const largeArc = 0; // A semicircle is never > 180 degrees
 
   const tone =
     s >= 80 ? "var(--sage)" : s >= 60 ? "var(--primary)" : s >= 40 ? "var(--coral)" : "var(--destructive)";
