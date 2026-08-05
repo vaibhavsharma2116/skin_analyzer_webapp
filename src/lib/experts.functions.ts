@@ -24,11 +24,42 @@ export const listExperts = createServerFn({ method: "GET" }).handler(async () =>
   const { data, error } = await supabaseAdmin
     .from("experts")
     .select("*")
+    .eq("active", true)
     .order("created_at", { ascending: false })
     .limit(500);
   if (error) throw new Error(error.message);
   return data ?? [];
 });
+
+export const listExpertAnswers = createServerFn({ method: "GET" })
+  .validator((expertId: string | undefined) => z.string().optional().parse(expertId))
+  .handler(async ({ data: expertId }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = supabaseAdmin.from("expert_answers").select("*").order("created_at", { ascending: false });
+    if (expertId) {
+      query = query.eq("expert_id", expertId);
+    }
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const getExpert = createServerFn({ method: "GET" })
+  .validator((idOrSlug: string) => z.string().parse(idOrSlug))
+  .handler(async ({ data: idOrSlug }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Check if it's a UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    let query = supabaseAdmin.from("experts").select("*");
+    if (isUuid) {
+      query = query.eq("id", idOrSlug);
+    } else {
+      query = query.eq("slug", idOrSlug);
+    }
+    const { data, error } = await query.maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  });
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase

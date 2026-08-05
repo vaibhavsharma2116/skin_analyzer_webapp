@@ -3,13 +3,14 @@ import { useState } from "react";
 import { ArrowLeft, ChevronRight, MessageCircle, Share2, Star, ThumbsUp, UserCircle } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
-import { ANSWERS, EXPERTS_BY_ID, type Expert, type ExpertAnswer } from "@/lib/tips-content";
+import { getExpert, listExpertAnswers } from "@/lib/experts.functions";
 
 export const Route = createFileRoute("/tips/experts/$id")({
-  loader: ({ params }) => {
-    const expert = EXPERTS_BY_ID[params.id];
+  loader: async ({ params }) => {
+    const expert = await getExpert(params.id);
     if (!expert) throw notFound();
-    return { expert, answers: ANSWERS.filter((a) => a.expertId === params.id) };
+    const answers = await listExpertAnswers(expert.id);
+    return { expert, answers };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/tips/experts/$id")({
 const TABS = ["Top Answers", "Recent Answers", "About"];
 
 function ExpertProfilePage() {
-  const data = Route.useLoaderData() as { expert: Expert; answers: ExpertAnswer[] };
+  const data = Route.useLoaderData();
   const { expert, answers } = data;
   const navigate = useNavigate();
   const [tab, setTab] = useState(0);
@@ -48,7 +49,7 @@ function ExpertProfilePage() {
             <p className="truncate text-[11px] text-muted-foreground">{expert.years}</p>
             <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold">
               <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-              {expert.rating} <span className="text-muted-foreground">({expert.answers} Answers)</span>
+              {expert.rating} <span className="text-muted-foreground">({expert.answers_count} Answers)</span>
             </p>
           </div>
           <Button
@@ -63,7 +64,7 @@ function ExpertProfilePage() {
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{expert.bio}</p>
 
         <div className="mt-4 grid grid-cols-3 divide-x divide-border/60 rounded-2xl bg-secondary/40 py-2 text-center">
-          <div><p className="text-sm font-bold">{expert.answers}</p><p className="text-[10px] text-muted-foreground">Answers</p></div>
+          <div><p className="text-sm font-bold">{expert.answers_count}</p><p className="text-[10px] text-muted-foreground">Answers</p></div>
           <div><p className="text-sm font-bold">{expert.followers}</p><p className="text-[10px] text-muted-foreground">Followers</p></div>
           <div><p className="text-sm font-bold">{expert.positive}</p><p className="text-[10px] text-muted-foreground">Positive Rating</p></div>
         </div>
@@ -96,7 +97,7 @@ function ExpertProfilePage() {
               No answers yet.
             </p>
           )}
-          {answers.map((a) => (
+          {answers.map((a: any) => (
             <div key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-2xl border border-border/70 bg-card p-3">
               <div className="min-w-0">
                 <p className="line-clamp-2 text-sm font-semibold">{a.question}</p>
@@ -104,7 +105,7 @@ function ExpertProfilePage() {
                 <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1"><UserCircle className="h-3.5 w-3.5" /> {expert.name}</span>
                   <span>·</span>
-                  <span>{a.daysAgo}</span>
+                  <span>{a.days_ago || "Just now"}</span>
                   <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> {a.likes}</span>
                   <span className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {a.comments}</span>
                 </div>

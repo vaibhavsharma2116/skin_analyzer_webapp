@@ -3,11 +3,13 @@ import { useState } from "react";
 import { ArrowLeft, Bookmark, Share2, ThumbsDown, ThumbsUp, UserCircle } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
-import { ARTICLES_BY_SLUG, type Article } from "@/lib/tips-content";
+import { getArticleBySlug } from "@/lib/articles.functions";
+import type { ArticleSection } from "@/lib/tips-content";
 
 export const Route = createFileRoute("/tips/article/$slug")({
-  loader: ({ params }) => {
-    const article = ARTICLES_BY_SLUG[params.slug];
+  loader: async ({ params }) => {
+    const fn = getArticleBySlug;
+    const article = await fn(params.slug);
     if (!article) throw notFound();
     return { article };
   },
@@ -23,7 +25,7 @@ export const Route = createFileRoute("/tips/article/$slug")({
 });
 
 function ArticlePage() {
-  const data = Route.useLoaderData() as { article: Article };
+  const data = Route.useLoaderData();
   const article = data.article;
   const navigate = useNavigate();
   const [helpful, setHelpful] = useState<"yes" | "no" | null>(null);
@@ -39,39 +41,40 @@ function ArticlePage() {
         </div>
       }
     >
-      <div className={`flex h-40 items-center justify-center rounded-[24px] bg-gradient-to-br ${article.gradient} text-6xl`}>
-        {article.hero ?? "✨"}
+      <div className={`flex h-40 items-center justify-center rounded-[24px] bg-gradient-to-br ${article.metadata?.gradient || "from-primary/20 to-primary/5"} text-6xl`}>
+        {article.metadata?.hero ?? "✨"}
       </div>
 
       <span className="mt-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-        {article.categoryLabel}
+        {article.category || "Article"}
       </span>
       <h1 className="mt-2 text-xl font-semibold leading-tight">{article.title}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{article.summary}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{article.excerpt}</p>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <UserCircle className="h-4 w-4" />
-        <span>By {article.author}</span>
-        <span>·</span>
-        <span>{article.date}</span>
-        <span>·</span>
-        <span>{article.readMinutes} min read</span>
+      <div className="mt-4 flex items-center justify-between border-y border-border/50 py-3">
+        <div className="flex items-center gap-2">
+          <UserCircle className="h-4 w-4" />
+          <span className="text-xs font-medium">{article.author}</span>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-semibold">{article.metadata?.readMinutes || 3} min read</p>
+          <p className="text-[10px] text-muted-foreground">
+            {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4">
-        <p className="text-sm font-semibold">In this article</p>
-        <ul className="mt-2 space-y-1 text-sm">
-          {article.toc.map((t) => (
-            <li key={t} className="flex items-start gap-2">
-              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              <span>{t}</span>
-            </li>
+      <div className="mt-5 rounded-2xl bg-muted/50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">In this article</p>
+        <ul className="mt-2 space-y-1.5">
+          {(article.metadata?.toc || []).map((item: string, i: number) => (
+            <li key={i} className="text-sm font-medium text-foreground/80">• {item}</li>
           ))}
         </ul>
       </div>
 
-      <div className="mt-5 space-y-5">
-        {article.sections.map((s, i) => {
+      <div className="mt-6 space-y-5 text-[15px] leading-relaxed">
+        {(article.metadata?.sections || []).map((s: ArticleSection, i: number) => {
           if (s.kind === "paragraph") {
             return <p key={i} className="text-sm leading-relaxed text-foreground/90">{s.text}</p>;
           }
@@ -99,12 +102,11 @@ function ArticlePage() {
               </div>
             );
           }
-          // benefits
           return (
             <div key={i}>
               <p className="text-base font-semibold">Benefits for your skin</p>
               <div className="mt-2 space-y-2">
-                {s.items.map((b) => {
+                {s.items.map((b: any) => {
                   const Icon = b.icon;
                   return (
                     <div key={b.title} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-2xl border border-border/70 bg-card p-3">
@@ -124,15 +126,20 @@ function ArticlePage() {
         })}
       </div>
 
-      {article.products.length > 0 && (
-        <div className="mt-6">
-          <p className="text-base font-semibold">Best products with {article.title.split(":")[0]}</p>
-          <div className="mt-2 -mx-1 flex gap-2 overflow-x-auto px-1 pb-2">
-            {article.products.map((p) => (
-              <div key={p.name} className="min-w-[120px] rounded-2xl border border-border/70 bg-card p-3 text-center">
-                <div className="mb-2 flex h-16 items-center justify-center rounded-xl bg-primary/5 text-2xl">🧴</div>
-                <p className="text-xs font-semibold leading-tight">{p.name}</p>
-                <p className="mt-1 text-xs font-semibold text-primary">{p.price}</p>
+      {(article.metadata?.products || []).length > 0 && (
+        <div className="mt-10">
+          <p className="text-sm font-semibold">Recommended for this routine</p>
+          <div className="mt-3 space-y-2">
+            {(article.metadata?.products || []).map((p: any, i: number) => (
+              <div key={i} className="flex items-center justify-between rounded-2xl border border-border/70 bg-card p-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-muted" />
+                  <div>
+                    <p className="text-sm font-medium">{p.name}</p>
+                    <p className="text-xs font-semibold text-primary">{p.price}</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">Shop</Button>
               </div>
             ))}
           </div>

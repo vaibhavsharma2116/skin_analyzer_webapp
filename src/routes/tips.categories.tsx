@@ -1,13 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { CATEGORIES } from "@/lib/tips-content";
+import { listArticles } from "@/lib/articles.functions";
 
 export const Route = createFileRoute("/tips/categories")({
+  loader: async () => {
+    const fn = listArticles;
+    const articles = await fn();
+    return { articles };
+  },
   component: CategoriesPage,
 });
 
 function CategoriesPage() {
+  const { articles } = Route.useLoaderData();
   const navigate = useNavigate();
   return (
     <DeviceFrame
@@ -32,7 +40,7 @@ function CategoriesPage() {
                 <p className="truncate text-xs text-muted-foreground">{c.description}</p>
               </div>
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                {c.count} Articles
+                {articles.filter(a => a.category === c.key).length} Articles
               </span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>

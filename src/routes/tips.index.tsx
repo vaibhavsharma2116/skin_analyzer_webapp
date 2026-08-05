@@ -1,30 +1,58 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { Bell, Bookmark, Home, History, LayoutGrid, ScanFace, Search, Sparkles, UserRound } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Input } from "@/components/ui/input";
-import { ARTICLES, CATEGORIES } from "@/lib/tips-content";
+import { Button } from "@/components/ui/button";
+import { CATEGORIES } from "@/lib/tips-content";
+import { listArticles, seedTips } from "@/lib/articles.functions";
 
 export const Route = createFileRoute("/tips/")({
+  loader: async () => {
+    const fn = listArticles;
+    const articles = await fn();
+    return { articles };
+  },
   component: TipsHome,
 });
 
 function TipsHome() {
+  const { articles } = Route.useLoaderData();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<string>("all");
 
-  const featured = ARTICLES[3] ?? ARTICLES[0];
+  const featured = articles.length > 3 ? articles[3] : articles[0];
   const trending = useMemo(() => {
-    const list = ARTICLES.filter((a) => (filter === "all" ? true : a.category === filter));
+    const list = articles.filter((a) => (filter === "all" ? true : a.category === filter));
     const ql = q.trim().toLowerCase();
-    return (ql ? list.filter((a) => a.title.toLowerCase().includes(ql) || a.summary.toLowerCase().includes(ql)) : list).slice(0, 6);
-  }, [q, filter]);
+    return (ql ? list.filter((a) => a.title.toLowerCase().includes(ql) || (a.excerpt || "").toLowerCase().includes(ql)) : list).slice(0, 6);
+  }, [q, filter, articles]);
 
   const filters = [
     { key: "all", label: "All", icon: LayoutGrid },
     ...CATEGORIES.map((c) => ({ key: c.key, label: c.shortLabel, icon: c.icon })),
   ];
+
+  if (articles.length === 0) {
+    return (
+      <DeviceFrame title="Tips & Articles">
+        <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+          <p className="mb-4 text-lg font-semibold">Database is empty</p>
+          <Button onClick={async () => {
+            await seedTips();
+            window.location.reload();
+          }}>
+            Seed Database
+          </Button>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Note: You must first run `migration.sql` in your Supabase SQL Editor.
+          </p>
+        </div>
+      </DeviceFrame>
+    );
+  }
 
   return (
     <DeviceFrame
@@ -81,24 +109,26 @@ function TipsHome() {
           View All
         </button>
       </div>
-      <button
-        type="button"
-        onClick={() => navigate({ to: "/tips/article/$slug", params: { slug: featured.slug } })}
-        className={`mt-2 block w-full overflow-hidden rounded-[24px] border border-border/70 bg-gradient-to-br ${featured.gradient} text-left`}
-      >
-        <div className="grid grid-cols-[1fr_auto] items-center gap-3 p-5">
-          <div className="min-w-0">
-            <p className="text-lg font-semibold leading-tight">{featured.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{featured.summary}</p>
-            <span className="mt-3 inline-block rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-primary">
-              {featured.readMinutes} min read
-            </span>
+      {featured ? (
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/tips/article/$slug", params: { slug: featured.slug } })}
+          className={`mt-2 block w-full overflow-hidden rounded-[24px] border border-border/70 bg-gradient-to-br ${featured.metadata?.gradient || "from-primary/20 to-primary/5"} text-left`}
+        >
+          <div className="grid grid-cols-[1fr_auto] items-center gap-3 p-5">
+            <div className="min-w-0">
+              <p className="text-lg font-semibold leading-tight">{featured.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{featured.excerpt}</p>
+              <span className="mt-3 inline-block rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                {featured.metadata?.readMinutes || 3} min read
+              </span>
+            </div>
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/60 text-4xl">
+              {featured.metadata?.hero ?? "✨"}
+            </div>
           </div>
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/60 text-4xl">
-            {featured.hero ?? "✨"}
-          </div>
-        </div>
-      </button>
+        </button>
+      ) : null}
 
       <div className="mt-5 flex items-center justify-between">
         <p className="text-sm font-semibold">Trending Articles</p>
@@ -114,13 +144,13 @@ function TipsHome() {
             onClick={() => navigate({ to: "/tips/article/$slug", params: { slug: a.slug } })}
             className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 text-left"
           >
-            <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${a.gradient} text-2xl`}>
-              {a.hero ?? "✨"}
+            <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${a.metadata?.gradient || "from-primary/20 to-primary/5"} text-2xl`}>
+              {a.metadata?.hero ?? "✨"}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{a.title}</p>
-              <p className="line-clamp-2 text-xs text-muted-foreground">{a.summary}</p>
-              <p className="mt-1 text-[10px] font-medium text-muted-foreground">{a.readMinutes} min read</p>
+              <p className="line-clamp-2 text-xs text-muted-foreground">{a.excerpt}</p>
+              <p className="mt-1 text-[10px] font-medium text-muted-foreground">{a.metadata?.readMinutes || 3} min read</p>
             </div>
             <Bookmark className="h-4 w-4 text-muted-foreground" />
           </button>
