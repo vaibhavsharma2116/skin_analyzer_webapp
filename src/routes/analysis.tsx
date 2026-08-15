@@ -102,7 +102,10 @@ function AnalysisPage() {
       })
       .catch((e: unknown) => {
         clearInterval(timer);
-        const msg = e instanceof Error ? e.message : "Analysis failed. Please try again.";
+        let msg = e instanceof Error ? e.message : "Analysis failed. Please try again.";
+        if (/<[a-z][\s\S]*>/i.test(msg) || msg.includes("504 Gateway") || msg.includes("502 Bad Gateway")) {
+          msg = "The server took too long to respond or encountered an error. Please try again later.";
+        }
         setError(msg);
         setStatus("error");
       });
