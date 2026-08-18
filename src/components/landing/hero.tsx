@@ -3,7 +3,7 @@ import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { getScanCount } from "@/lib/public-stats.functions";
-import heroImage from "@/assets/skinpop-hero.jpg";
+import heroImage from "@/assets/WEB_IMAGE.webp";
 
 function formatCount(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M+`;
