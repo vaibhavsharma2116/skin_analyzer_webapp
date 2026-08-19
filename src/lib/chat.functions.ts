@@ -22,7 +22,9 @@ const ChatInput = z.object({
     .optional(),
 });
 
-export const chatWithAI = createServerFn("POST", async (input: z.infer<typeof ChatInput>) => {
+export const chatWithAI = createServerFn({ method: "POST" })
+  .validator((input: unknown) => ChatInput.parse(input))
+  .handler(async ({ data: input }) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("AI service is not configured");
