@@ -114,7 +114,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const model = "gemini-2.5-flash";
+  const model = "gemini-3.6-flash";
   void hashStringToInt;
   
   // Extract mime type and base64 data from the data URL

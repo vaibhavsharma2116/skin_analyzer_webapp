@@ -36,8 +36,8 @@ export const Route = createFileRoute("/scan")({
 
 type Step = "prep" | "capture" | "preview";
 
-const SCAN_IMAGE_WIDTH = 768;
-const SCAN_IMAGE_HEIGHT = 1024;
+const SCAN_IMAGE_WIDTH = 576;
+const SCAN_IMAGE_HEIGHT = 768;
 const SCAN_IMAGE_ASPECT = SCAN_IMAGE_WIDTH / SCAN_IMAGE_HEIGHT;
 const SCAN_FINGERPRINT_STORAGE_KEY = "skinpop:lastScanFingerprint";
 
