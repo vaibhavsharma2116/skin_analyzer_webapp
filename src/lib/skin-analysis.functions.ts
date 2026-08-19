@@ -114,7 +114,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash"];
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
   let lastError: Error = new Error("AI request failed");
   
   // Extract mime type and base64 data from the data URL
@@ -122,7 +122,9 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const base64Data = imageDataUrl.split(',')[1];
 
   for (const model of modelsToTry) {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    let res: Response;
+    try {
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -152,6 +154,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
           temperature: 0.4,
         }
       }),
+      signal: AbortSignal.timeout(25000),
     });
 
     if (!res.ok) {
@@ -165,9 +168,11 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
         continue;
       }
       
+      
       throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
     }
-
+    
+    // Process successful response
     const json = await res.json() as any;
     const content = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     
@@ -181,6 +186,11 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
     }
     const result = AnalysisResultSchema.parse(parsed);
     return { result, model };
+
+  } catch (err) {
+    lastError = err instanceof Error ? err : new Error(String(err));
+    continue;
+  }
   }
 
   throw lastError;
