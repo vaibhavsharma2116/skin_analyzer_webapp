@@ -68,7 +68,7 @@ function RecommendedProducts() {
       <div className="mt-5 grid grid-cols-2 gap-3">
         {products?.map((p) => (
           <div key={p.id} className="relative flex flex-col rounded-2xl border border-border/70 bg-card p-3 shadow-sm group hover:shadow-md transition-shadow">
-            <a href={`/shop/product/${p.handle}`} className="flex flex-col flex-1">
+            <a href={`https://sknpop.in/products/${p.handle}`} target="_blank" rel="noopener noreferrer" className="flex flex-col flex-1">
               <div className="aspect-square w-full rounded-xl bg-muted overflow-hidden relative">
                 {p.images.edges[0]?.node?.url ? (
                   <img 
@@ -87,7 +87,7 @@ function RecommendedProducts() {
               </p>
             </a>
             <a
-              href={`/shop/product/${p.handle}`}
+              href={`https://sknpop.in/products/${p.handle}`} target="_blank" rel="noopener noreferrer"
               className="mt-3 flex h-9 w-full items-center justify-center rounded-xl bg-primary text-primary-foreground text-xs font-semibold uppercase"
             >
               <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> Buy Now

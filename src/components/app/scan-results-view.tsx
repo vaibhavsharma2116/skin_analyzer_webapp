@@ -413,7 +413,8 @@ function ShopifyProductList({ scan }: { scan: ScanRow }) {
       {products.map((product) => (
         <a 
           key={product.id} 
-          href={`/shop/product/${product.handle}`} 
+          href={`https://sknpop.in/products/${product.handle}`} 
+          target="_blank" rel="noopener noreferrer"
           className="min-w-[140px] max-w-[140px] flex-shrink-0 snap-start rounded-2xl border border-border bg-card shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow group"
         >
           <div className="aspect-square bg-muted relative overflow-hidden">

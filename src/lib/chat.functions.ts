@@ -36,7 +36,7 @@ export const chatWithAI = createServerFn({ method: "POST" })
   
   const productsContext = products.length > 0 
     ? `\n\nAVAILABLE SKNPOP PRODUCTS IN STORE:\n` + products.map(p => 
-        `- ${p.title} (${p.priceRange.minVariantPrice.currencyCode} ${p.priceRange.minVariantPrice.amount}): ${p.description.substring(0, 100)}... (Link: /shop/product/${p.handle})`
+        `- ${p.title} (${p.priceRange.minVariantPrice.currencyCode} ${p.priceRange.minVariantPrice.amount}): ${p.description.substring(0, 100)}... (Link: https://sknpop.in/products/${p.handle})`
       ).join("\n")
     : "";
 
