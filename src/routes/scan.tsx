@@ -117,7 +117,7 @@ function drawNormalizedScanImage(source: CanvasImageSource, sourceWidth: number,
 
   ctx.drawImage(source, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   return {
-    dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+    dataUrl: canvas.toDataURL("image/jpeg", 0.80),
     fingerprint: buildFaceFingerprint(canvas),
   };
 }
