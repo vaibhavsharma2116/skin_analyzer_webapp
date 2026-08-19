@@ -74,7 +74,7 @@ export interface ShopifyProduct {
 
 const SEARCH_PRODUCTS_QUERY = `
   query searchProducts($query: String!) {
-    products(first: 20, query: $query) {
+    products(first: 100, query: $query) {
       edges {
         node {
           id
