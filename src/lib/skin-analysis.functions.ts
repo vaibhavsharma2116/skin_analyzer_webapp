@@ -73,13 +73,44 @@ Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
     // IMPORTANT: The recommendations array MUST contain items with specific prefixes so the app can parse them.
     // Format: "PREFIX: Text" or "PREFIX: Title|Hint|Emoji"
     
-    // Provide exactly 2 to 4 MORNING routine steps:
-    "MORNING: Gentle Cleanser | To remove overnight impurities | 🧼",
-    "MORNING: Vitamin C Serum | For antioxidant protection | 🍊",
+    // YOU MUST ONLY RECOMMEND PRODUCTS FROM THIS EXACT CATALOG, MATCHING THE PRIMARY CONCERN:
+    // [CLEANSERS]
+    // - Gentle Hydrating Cleanser (For Dry, Sensitive, Barrier Repair)
+    // - Salicylic Cleanser (For Acne, Oily Skin, Blackheads)
+    // - Brightening Cleanser (For Dullness, Pigmentation)
+    // [SERUMS]
+    // - 10% Niacinamide Serum (For Oil, Pores, Acne Marks)
+    // - Vitamin C Serum (For Brightening)
+    // - Alpha Arbutin Serum (For Pigmentation)
+    // - Tranexamic Acid Serum (For Melasma)
+    // - Hyaluronic Acid Serum (For Hydration)
+    // - Retinal Serum (For Anti-aging)
+    // - Azelaic Acid Serum (For Acne, Redness)
+    // - Barrier Repair Serum (For Sensitive Skin)
+    // - Peptide Serum (For Firmness)
+    // - Caffeine Eye Serum (For Dark Circles)
+    // [MOISTURIZERS]
+    // - Gel Moisturizer (For Oily, Acne-prone)
+    // - Barrier Cream (For Dry, Sensitive, Damaged Barrier)
+    // - Oil-Free Moisturizer (For Extremely Oily)
+    // - Overnight Repair Cream (For Night routine, Anti-aging)
+    // [SUNSCREENS]
+    // - SPF50 Gel Sunscreen (For normal to dry)
+    // - Matte Sunscreen (For Oily, Acne-prone)
+    // - Hydrating Sunscreen (For Dry, Sensitive)
     
-    // Provide exactly 2 to 4 EVENING routine steps:
-    "EVENING: Double Cleanse | To remove sunscreen & makeup | 🫧",
-    "EVENING: Retinol | To target fine lines | 🌙",
+    // Provide exactly 3 to 4 MORNING routine steps:
+    // Format: "MORNING: [Exact Product Name from Catalog] | [Short Reason] | [Emoji]"
+    "MORNING: Salicylic Cleanser | To clear excess oil and acne | 🫧",
+    "MORNING: 10% Niacinamide Serum | To control sebum and refine pores | 💧",
+    "MORNING: Gel Moisturizer | Lightweight hydration without clogging | 🧴",
+    "MORNING: Matte Sunscreen | To protect and control shine | ☀️",
+    
+    // Provide exactly 3 to 4 EVENING routine steps using the SAME CATALOG:
+    // Format: "EVENING: [Exact Product Name from Catalog] | [Short Reason] | [Emoji]"
+    "EVENING: Salicylic Cleanser | To deep clean pores after the day | 🧼",
+    "EVENING: Retinal Serum | To target fine lines and texture | 🌙",
+    "EVENING: Overnight Repair Cream | To restore barrier while you sleep | 🌜",
     
     // Provide 2 to 4 ingredients to USE:
     "USE: Niacinamide",
