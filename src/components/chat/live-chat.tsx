@@ -33,7 +33,7 @@ export function LiveChat() {
         parts: [{ text: m.text }]
       }));
       
-      const res = await chatWithAI({ message, history });
+      const res = await chatWithAI({ data: { message, history } });
       return res.reply;
     },
     onSuccess: (reply) => {

@@ -12,6 +12,8 @@ export async function shopifyFetch<T>({
     import.meta.env?.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN ||
     process.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
+  console.log("SHOPIFY CREDS:", { domain, token });
+
   if (!domain || !token) {
     console.error("Missing Shopify credentials. Please check .env");
     throw new Error("Shopify credentials are not configured");

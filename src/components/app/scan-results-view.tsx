@@ -396,7 +396,7 @@ function ShopifyProductList({ scan }: { scan: ScanRow }) {
   
   const { data: products, isLoading } = useQuery({
     queryKey: ["shopify-recommendations", concerns],
-    queryFn: () => getShopifyRecommendations({ concerns: concerns.length > 0 ? concerns : ["skincare"] }),
+    queryFn: () => getShopifyRecommendations({ data: { concerns: concerns.length > 0 ? concerns : ["skincare"] } }),
     staleTime: 1000 * 60 * 5,
   });
 
