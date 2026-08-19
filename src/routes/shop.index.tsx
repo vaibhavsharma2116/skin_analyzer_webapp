@@ -103,9 +103,9 @@ function ShopPage() {
                 <Heart className={`h-4 w-4 ${isFav("product", p.id) ? "fill-coral text-coral" : ""}`} />
               </button>
               
-              <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-secondary/30 overflow-hidden">
+              <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-white overflow-hidden p-2">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={p.title} className="h-full w-full object-cover mix-blend-multiply" />
+                  <img src={imageUrl} alt={p.title} className="h-full w-full object-contain" />
                 ) : (
                   <ShoppingBag className="h-8 w-8 text-muted-foreground" />
                 )}
