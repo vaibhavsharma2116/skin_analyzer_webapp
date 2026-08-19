@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor, type RoutineStep } from "@/lib/recommendations";
+import { useQuery } from "@tanstack/react-query";
+import { getShopifyRecommendations, matchProductToStep, type ShopifyProduct } from "@/lib/shopify.functions";
 
 const KEY = "skinpop.builder.v1";
 
@@ -49,6 +51,11 @@ function RoutineBuilder() {
   }, [fetchLatest]);
 
   const preset = useMemo(() => recommendationsFor(scan), [scan]);
+  const { data: allProducts } = useQuery({
+    queryKey: ["shopify-all-products"],
+    queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
+    staleTime: 1000 * 60 * 5,
+  });
 
   const [amSel, setAmSel] = useState<Set<string>>(new Set());
   const [pmSel, setPmSel] = useState<Set<string>>(new Set());
@@ -97,6 +104,7 @@ function RoutineBuilder() {
         onToggle={(id) => toggle(amSel, setAmSel, id)}
         time={amTime}
         onTime={setAmTime}
+        allProducts={allProducts}
       />
       <SlotEditor
         title="Evening Routine"
@@ -106,6 +114,7 @@ function RoutineBuilder() {
         onToggle={(id) => toggle(pmSel, setPmSel, id)}
         time={pmTime}
         onTime={setPmTime}
+        allProducts={allProducts}
       />
 
       <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4 text-xs text-muted-foreground">
@@ -131,6 +140,7 @@ function SlotEditor({
   onToggle: (id: string) => void;
   time: string;
   onTime: (t: string) => void;
+  allProducts: ShopifyProduct[] | undefined;
 }) {
   return (
     <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4">
@@ -146,21 +156,46 @@ function SlotEditor({
       <ul className="mt-3 space-y-2">
         {steps.map((s) => {
           const on = selected.has(s.id);
+          const matchedProduct = matchProductToStep(s.title, allProducts);
           return (
             <li key={s.id}>
               <button
                 type="button"
                 onClick={() => onToggle(s.id)}
-                className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${on ? "border-primary bg-primary/5" : "border-border/70 bg-secondary/30"}`}
+                className={`flex w-full flex-col gap-3 rounded-xl border p-3 text-left transition ${on ? "border-primary bg-primary/5" : "border-border/70 bg-secondary/30"}`}
               >
-                <span className={`flex h-6 w-6 items-center justify-center rounded-md border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
-                  {on && <span className="text-[11px]">✓</span>}
-                </span>
-                <span className="text-xl">{s.emoji}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{s.title}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">{s.hint}</p>
+                <div className="flex w-full items-center gap-3">
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
+                    {on && <span className="text-[11px]">✓</span>}
+                  </span>
+                  <span className="text-xl">{s.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">{matchedProduct ? matchedProduct.title : s.title}</p>
+                    <p className="truncate text-[11px] text-muted-foreground">{s.hint}</p>
+                  </div>
                 </div>
+                {matchedProduct && (
+                  <div className="ml-9 flex w-[calc(100%-2.25rem)] items-center gap-3 rounded-xl border border-border/70 bg-background/50 p-2 text-left">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {matchedProduct.images.edges[0]?.node?.url && (
+                        <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col justify-center">
+                      <div className="text-xs font-bold text-primary">
+                        {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
+                      </div>
+                      <a 
+                        href={`https://sknpop.in/products/${matchedProduct.handle}`} 
+                        target="_blank" rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 flex w-fit items-center justify-center rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground"
+                      >
+                        Buy Now
+                      </a>
+                    </div>
+                  </div>
+                )}
               </button>
             </li>
           );

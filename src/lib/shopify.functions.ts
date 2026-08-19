@@ -20,3 +20,25 @@ export const getShopifyRecommendations = createServerFn({ method: "POST" })
     // Fallback if no specific products found for the concern
     return searchShopifyProducts("skincare");
   });
+
+export function matchProductToStep(title: string, products: ShopifyProduct[] | undefined): ShopifyProduct | null {
+  if (!products) return null;
+  const lowerTitle = title.toLowerCase();
+  
+  if (lowerTitle.includes("cleanse")) {
+    return products.find(p => p.title.toLowerCase().includes("facewash") || p.title.toLowerCase().includes("cleanse")) || null;
+  }
+  if (lowerTitle.includes("vitamin c")) {
+    return products.find(p => p.title.toLowerCase().includes("vitamin c")) || null;
+  }
+  if (lowerTitle.includes("moisturizer")) {
+    return products.find(p => p.title.toLowerCase().includes("moisturizer")) || null;
+  }
+  if (lowerTitle.includes("niacinamide") || lowerTitle.includes("pigment") || lowerTitle.includes("dark")) {
+    return products.find(p => p.title.toLowerCase().includes("pigment") || p.title.toLowerCase().includes("niacinamide")) || null;
+  }
+  if (lowerTitle.includes("exfoliat") || lowerTitle.includes("scrub") || lowerTitle.includes("aha")) {
+    return products.find(p => p.title.toLowerCase().includes("scrub")) || null;
+  }
+  return null;
+}

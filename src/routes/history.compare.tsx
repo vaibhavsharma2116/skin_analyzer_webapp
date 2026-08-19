@@ -212,7 +212,9 @@ function ComparePage() {
                     <p className="truncate text-sm font-medium">
                       {new Date(s.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground capitalize">{s.scan_type} scan</p>
+                    <p className="truncate text-xs text-muted-foreground capitalize">
+                      {new Date(s.created_at).getHours() >= 5 && new Date(s.created_at).getHours() < 17 ? "morning" : "night"} scan
+                    </p>
                   </div>
                   <span className={`text-sm font-semibold ${scoreTone(s.overall_score).cls}`}>{s.overall_score}</span>
                 </button>
