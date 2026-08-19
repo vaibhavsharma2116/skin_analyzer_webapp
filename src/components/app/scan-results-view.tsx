@@ -18,7 +18,9 @@ import { RadarChart } from "./radar-chart";
 import { METRIC_META, METRIC_ORDER, normalizeMetrics, overallLabel, scoreTone } from "./metric-tokens";
 import type { ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor } from "@/lib/recommendations";
-
+import { useQuery } from "@tanstack/react-query";
+import { getShopifyRecommendations } from "@/lib/shopify.functions";
+import { ShoppingBag } from "lucide-react";
 type TabKey = "overview" | "concerns" | "analysis" | "advice";
 
 export function ScanResultsView({
@@ -323,6 +325,14 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
       </section>
 
       <section>
+        <h4 className="text-sm font-semibold flex items-center gap-2">
+          <ShoppingBag className="h-4 w-4 text-primary" />
+          Recommended for You
+        </h4>
+        <ShopifyProductList scan={scan} />
+      </section>
+
+      <section>
         <h4 className="text-sm font-semibold">Routine Recommendations</h4>
 
         <div className="mt-2 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
@@ -377,6 +387,58 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
       <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-center text-xs font-medium text-primary">
         ⭐ Remember: Consistency + Right Products + Healthy Lifestyle = Glowing Skin ✨
       </div>
+    </div>
+  );
+}
+
+function ShopifyProductList({ scan }: { scan: ScanRow }) {
+  const concerns = scan.concerns.map(c => c.name);
+  
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["shopify-recommendations", concerns],
+    queryFn: () => getShopifyRecommendations({ concerns: concerns.length > 0 ? concerns : ["skincare"] }),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  if (isLoading) {
+    return <div className="mt-2 text-xs text-muted-foreground animate-pulse">Loading recommended products from SKNPOP...</div>;
+  }
+
+  if (!products || products.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 flex gap-3 overflow-x-auto pb-4 pt-1 px-1 snap-x">
+      {products.map((product) => (
+        <a 
+          key={product.id} 
+          href={`/shop/product/${product.handle}`} 
+          className="min-w-[140px] max-w-[140px] flex-shrink-0 snap-start rounded-2xl border border-border bg-card shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow group"
+        >
+          <div className="aspect-square bg-muted relative overflow-hidden">
+            {product.images.edges[0]?.node?.url ? (
+              <img 
+                src={product.images.edges[0].node.url} 
+                alt={product.title} 
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground">No image</div>
+            )}
+          </div>
+          <div className="p-3 flex flex-col flex-grow">
+            <h5 className="font-semibold text-xs line-clamp-2 leading-tight">{product.title}</h5>
+            <div className="mt-auto pt-2 text-sm font-bold text-primary">
+              {product.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : product.priceRange.minVariantPrice.currencyCode} 
+              {parseFloat(product.priceRange.minVariantPrice.amount).toLocaleString()}
+            </div>
+            <div className="mt-2 bg-primary text-primary-foreground text-[10px] uppercase font-bold text-center py-1.5 rounded-lg w-full">
+              Buy Now
+            </div>
+          </div>
+        </a>
+      ))}
     </div>
   );
 }
