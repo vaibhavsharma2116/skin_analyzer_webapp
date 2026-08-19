@@ -19,7 +19,7 @@ import { METRIC_META, METRIC_ORDER, normalizeMetrics, overallLabel, scoreTone } 
 import type { ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor } from "@/lib/recommendations";
 import { useQuery } from "@tanstack/react-query";
-import { getShopifyRecommendations } from "@/lib/shopify.functions";
+import { getShopifyRecommendations, type ShopifyProduct } from "@/lib/shopify.functions";
 import { ShoppingBag } from "lucide-react";
 type TabKey = "overview" | "concerns" | "analysis" | "advice";
 
@@ -315,8 +315,36 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
 
 /* ---------------- Advice ---------------- */
 
+function matchProductToStep(title: string, products: ShopifyProduct[] | undefined): ShopifyProduct | null {
+  if (!products) return null;
+  const lowerTitle = title.toLowerCase();
+  
+  if (lowerTitle.includes("cleanse")) {
+    return products.find(p => p.title.toLowerCase().includes("facewash") || p.title.toLowerCase().includes("cleanse")) || null;
+  }
+  if (lowerTitle.includes("vitamin c")) {
+    return products.find(p => p.title.toLowerCase().includes("vitamin c")) || null;
+  }
+  if (lowerTitle.includes("moisturizer")) {
+    return products.find(p => p.title.toLowerCase().includes("moisturizer")) || null;
+  }
+  if (lowerTitle.includes("niacinamide") || lowerTitle.includes("pigment") || lowerTitle.includes("dark")) {
+    return products.find(p => p.title.toLowerCase().includes("pigment") || p.title.toLowerCase().includes("niacinamide")) || null;
+  }
+  if (lowerTitle.includes("exfoliat") || lowerTitle.includes("scrub") || lowerTitle.includes("aha")) {
+    return products.find(p => p.title.toLowerCase().includes("scrub")) || null;
+  }
+  return null;
+}
+
 function AdviceTab({ scan }: { scan: ScanRow }) {
   const preset = recommendationsFor(scan);
+  
+  const { data: allProducts } = useQuery({
+    queryKey: ["shopify-all-products"],
+    queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
+    staleTime: 1000 * 60 * 5,
+  });
   return (
     <div className="space-y-4">
       <section>
@@ -341,15 +369,35 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             <p className="text-sm font-semibold">Morning Routine</p>
           </div>
           <ol className="mt-2 space-y-1.5 text-sm">
-            {preset.am.map((step, i) => (
-              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline">
-                <span className="text-xs font-semibold text-muted-foreground">{i + 1}.</span>
-                <div>
-                  <span className="font-medium">{step.title}</span>
-                  {step.hint && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+            {preset.am.map((step, i) => {
+              const matchedProduct = matchProductToStep(step.title, allProducts);
+              return (
+              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
+                <span className="text-xs font-semibold text-muted-foreground pt-0.5">{i + 1}.</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium">{matchedProduct ? matchedProduct.title : step.title}</span>
+                  {step.hint && !matchedProduct && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+                  
+                  {matchedProduct && (
+                    <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
+                      <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                        {matchedProduct.images.edges[0]?.node?.url && (
+                          <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                         <div className="text-xs font-bold text-primary">
+                           {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
+                         </div>
+                         <a href={`https://sknpop.in/products/${matchedProduct.handle}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start">
+                           Buy Now
+                         </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </li>
-            ))}
+            )})}
           </ol>
         </div>
 
@@ -359,15 +407,35 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             <p className="text-sm font-semibold">Evening Routine</p>
           </div>
           <ol className="mt-2 space-y-1.5 text-sm">
-            {preset.pm.map((step, i) => (
-              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-baseline">
-                <span className="text-xs font-semibold text-muted-foreground">{i + 1}.</span>
-                <div>
-                  <span className="font-medium">{step.title}</span>
-                  {step.hint && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+            {preset.pm.map((step, i) => {
+              const matchedProduct = matchProductToStep(step.title, allProducts);
+              return (
+              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
+                <span className="text-xs font-semibold text-muted-foreground pt-0.5">{i + 1}.</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium">{matchedProduct ? matchedProduct.title : step.title}</span>
+                  {step.hint && !matchedProduct && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
+                  
+                  {matchedProduct && (
+                    <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
+                      <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                        {matchedProduct.images.edges[0]?.node?.url && (
+                          <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                         <div className="text-xs font-bold text-primary">
+                           {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
+                         </div>
+                         <a href={`https://sknpop.in/products/${matchedProduct.handle}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start">
+                           Buy Now
+                         </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </li>
-            ))}
+            )})}
           </ol>
         </div>
       </section>
