@@ -114,66 +114,76 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const model = "gemini-3.6-flash";
-  void hashStringToInt;
+  const modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash"];
+  let lastError: Error = new Error("AI request failed");
   
   // Extract mime type and base64 data from the data URL
   const mimeType = imageDataUrl.split(';')[0].split(':')[1];
   const base64Data = imageDataUrl.split(',')[1];
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      system_instruction: {
-        parts: [{ text: SYSTEM_PROMPT }]
+  for (const model of modelsToTry) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: "Analyze this selfie and respond with JSON only. Be strictly consistent: for the same image always return identical numbers. Evaluate methodically feature-by-feature using only visible pixels. Provide highly personalized product and active ingredient recommendations based specifically on the unique skin concerns detected in this exact image."
-            },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Data
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: SYSTEM_PROMPT }]
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: "Analyze this selfie and respond with JSON only. Be strictly consistent: for the same image always return identical numbers. Evaluate methodically feature-by-feature using only visible pixels. Provide highly personalized product and active ingredient recommendations based specifically on the unique skin concerns detected in this exact image."
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data
+                }
               }
-            }
-          ]
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.4,
         }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.4,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      if (res.status === 429) throw new Error("AI is rate-limited. Please try again in a moment.");
+      if (res.status === 402) throw new Error("AI credits exhausted. Please add credits in workspace settings.");
+      
+      // If the model is experiencing high demand, fallback to the next model
+      if (res.status === 503) {
+        lastError = new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
+        continue;
       }
-    }),
-  });
+      
+      throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
+    }
 
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    if (res.status === 429) throw new Error("AI is rate-limited. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please add credits in workspace settings.");
-    throw new Error(`AI request failed (${res.status}): ${text.slice(0, 200)}`);
+    const json = await res.json() as any;
+    const content = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("AI returned an unparseable response");
+      parsed = JSON.parse(match[0]);
+    }
+    const result = AnalysisResultSchema.parse(parsed);
+    return { result, model };
   }
 
-  const json = await res.json() as any;
-  const content = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    const match = content.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("AI returned an unparseable response");
-    parsed = JSON.parse(match[0]);
-  }
-  const result = AnalysisResultSchema.parse(parsed);
-  return { result, model };
+  throw lastError;
 }
 
 function inferScanType(): "morning" | "night" {
