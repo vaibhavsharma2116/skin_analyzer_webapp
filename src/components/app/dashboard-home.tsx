@@ -96,7 +96,7 @@ function HamburgerMenu({ onSignOut }: { onSignOut: () => void }) {
 
   const items = [
     { icon: Sparkles, label: "AI Recommendations", path: "/recommendations" },
-    { icon: Heart, label: "Favorites & Saved", path: "/favorites" },
+    // { icon: Heart, label: "Favorites & Saved", path: "/favorites" },
     { icon: Bell, label: "Reminders", path: "/reminders" },
     { icon: UserRound, label: "Profile", path: "/settings" },
     { icon: Settings, label: "Settings", path: "/settings" },
