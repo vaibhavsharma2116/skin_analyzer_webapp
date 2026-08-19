@@ -76,8 +76,9 @@ function AnalysisPage() {
       setStepIdx((i) => (i + 1) % LOADING_STEPS.length);
     }, 1400);
 
-    analyze({ data: { imageDataUrl, faceFingerprint } })
-      .then((row) => {
+    const performAnalysis = async (retries = 2) => {
+      try {
+        const row = await analyze({ data: { imageDataUrl: imageDataUrl!, faceFingerprint } });
         clearInterval(timer);
         setResult(row as Result);
         setStatus("ready");
@@ -99,17 +100,27 @@ function AnalysisPage() {
         } catch (e) {
           // ignore error
         }
-      })
-      .catch((e: unknown) => {
-        clearInterval(timer);
+      } catch (e: unknown) {
         let msg = e instanceof Error ? e.message : "Analysis failed. Please try again.";
+        
+        // If Nginx cuts the connection (504), the backend is likely still processing it.
+        // We automatically retry. The next request will hit the Supabase cache instantly!
+        if (msg.includes("504") && retries > 0) {
+          setTimeout(() => performAnalysis(retries - 1), 4000);
+          return;
+        }
+
+        clearInterval(timer);
         // Avoid rendering raw HTML if the error message contains it, but still show the text
         if (/<[a-z][\s\S]*>/i.test(msg)) {
           msg = "Server Error: " + msg.replace(/<[^>]*>?/gm, ' ').substring(0, 150) + "...";
         }
         setError(msg);
         setStatus("error");
-      });
+      }
+    };
+
+    performAnalysis();
 
     return () => clearInterval(timer);
   }, [analyze]);
