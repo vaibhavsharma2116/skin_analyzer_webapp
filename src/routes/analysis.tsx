@@ -103,8 +103,9 @@ function AnalysisPage() {
       .catch((e: unknown) => {
         clearInterval(timer);
         let msg = e instanceof Error ? e.message : "Analysis failed. Please try again.";
-        if (/<[a-z][\s\S]*>/i.test(msg) || msg.includes("504 Gateway") || msg.includes("502 Bad Gateway")) {
-          msg = "The server took too long to respond or encountered an error. Please try again later.";
+        // Avoid rendering raw HTML if the error message contains it, but still show the text
+        if (/<[a-z][\s\S]*>/i.test(msg)) {
+          msg = "Server Error: " + msg.replace(/<[^>]*>?/gm, ' ').substring(0, 150) + "...";
         }
         setError(msg);
         setStatus("error");
