@@ -21,6 +21,12 @@ export const getShopifyRecommendations = createServerFn({ method: "POST" })
     return searchShopifyProducts("skincare");
   });
 
+export const getAllShopifyProducts = createServerFn({ method: "GET" })
+  .handler(async (): Promise<ShopifyProduct[]> => {
+    // Empty search term to fetch default products (first 20)
+    return searchShopifyProducts("");
+  });
+
 export function matchProductToStep(title: string, products: ShopifyProduct[] | undefined): ShopifyProduct | null {
   if (!products) return null;
   const lowerTitle = title.toLowerCase();

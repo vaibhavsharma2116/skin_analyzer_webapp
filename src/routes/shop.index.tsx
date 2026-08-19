@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { SAVED_PRODUCTS, useFavorites } from "@/lib/favorites-content";
 import { useCart } from "@/lib/cart";
 
+import { getAllShopifyProducts } from "@/lib/shopify.functions";
+import type { ShopifyProduct } from "@/lib/shopify";
+import { useLoaderData } from "@tanstack/react-router";
+
 export const Route = createFileRoute("/shop/")({
   head: () => ({
     meta: [
@@ -13,6 +17,10 @@ export const Route = createFileRoute("/shop/")({
       { name: "description", content: "Discover skincare and sunscreen products curated for your skin profile." },
     ],
   }),
+  loader: async () => {
+    const products = await getAllShopifyProducts();
+    return { products };
+  },
   component: ShopPage,
 });
 
@@ -26,12 +34,16 @@ function ShopPage() {
   const navigate = useNavigate();
   const { isFav, toggle } = useFavorites();
   const { count } = useCart();
+  const { products } = useLoaderData({ from: "/shop/" });
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
 
   const list = useMemo(() => {
-    if (filter === "all") return SAVED_PRODUCTS;
-    return SAVED_PRODUCTS.filter((p) => p.category === filter);
-  }, [filter]);
+    // Basic filter by title keywords, as Shopify doesn't have our internal categories by default
+    if (filter === "all") return products;
+    return products.filter((p) => p.title.toLowerCase().includes(filter));
+  }, [filter, products]);
+
+  const shopifyDomain = import.meta.env.VITE_SHOPIFY_STORE_DOMAIN;
 
   return (
     <DeviceFrame
@@ -71,34 +83,50 @@ function ShopPage() {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        {list.map((p) => (
-          <div
-            key={p.id}
-            className="relative rounded-2xl border border-border/70 bg-card p-3 shadow-sm cursor-pointer"
-            onClick={() => navigate({ to: "/shop/product/$id", params: { id: p.id } })}
-          >
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); toggle("product", p.id); }}
-              className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-secondary/80 text-muted-foreground transition hover:text-primary"
-              aria-label={isFav("product", p.id) ? "Remove from favorites" : "Add to favorites"}
+        {list.map((p) => {
+          const imageUrl = p.images?.edges?.[0]?.node?.url || "";
+          const price = p.priceRange?.minVariantPrice;
+          const productUrl = `https://${shopifyDomain}/products/${p.handle}`;
+          
+          return (
+            <div
+              key={p.id}
+              className="relative rounded-2xl border border-border/70 bg-card p-3 shadow-sm cursor-pointer"
+              onClick={() => window.open(productUrl, "_blank")}
             >
-              <Heart className={`h-4 w-4 ${isFav("product", p.id) ? "fill-coral text-coral" : ""}`} />
-            </button>
-            <div className={`flex h-20 w-full items-center justify-center rounded-2xl text-3xl ${p.tone}`}>{p.emoji}</div>
-            <p className="mt-3 truncate text-sm font-semibold text-foreground">{p.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{p.subtitle}</p>
-            <p className="mt-2 text-base font-semibold text-primary">{p.price}</p>
-            <Button
-              size="sm"
-              className="mt-2 h-9 w-full rounded-xl text-xs"
-              onClick={(e) => { e.stopPropagation(); navigate({ to: "/shop/product/$id", params: { id: p.id } }); }}
-            >
-              <ShoppingBag className="mr-1 h-3.5 w-3.5" />
-              View
-            </Button>
-          </div>
-        ))}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggle("product", p.id); }}
+                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-secondary/80 text-muted-foreground transition hover:text-primary z-10"
+                aria-label={isFav("product", p.id) ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Heart className={`h-4 w-4 ${isFav("product", p.id) ? "fill-coral text-coral" : ""}`} />
+              </button>
+              
+              <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-secondary/30 overflow-hidden">
+                {imageUrl ? (
+                  <img src={imageUrl} alt={p.title} className="h-full w-full object-cover mix-blend-multiply" />
+                ) : (
+                  <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+              
+              <p className="mt-3 truncate text-sm font-semibold text-foreground" title={p.title}>{p.title}</p>
+              <p className="mt-2 text-base font-semibold text-primary">
+                {price ? `${price.currencyCode === 'INR' ? '₹' : price.currencyCode} ${price.amount}` : "Price TBD"}
+              </p>
+              
+              <Button
+                size="sm"
+                className="mt-2 h-9 w-full rounded-xl text-xs bg-coral hover:bg-coral/90 text-white"
+                onClick={(e) => { e.stopPropagation(); window.open(productUrl, "_blank"); }}
+              >
+                <ShoppingBag className="mr-1 h-3.5 w-3.5" />
+                Buy Now
+              </Button>
+            </div>
+          );
+        })}
       </div>
     </DeviceFrame>
   );
