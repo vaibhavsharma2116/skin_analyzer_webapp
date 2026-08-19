@@ -114,7 +114,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const model = "gemini-3.6-flash";
+  const model = "gemini-1.5-flash";
   void hashStringToInt;
   
   // Extract mime type and base64 data from the data URL
@@ -179,6 +179,23 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
 function inferScanType(): "morning" | "night" {
   const h = new Date().getHours();
   return h >= 5 && h < 17 ? "morning" : "night";
+}
+
+export type LocalScanCategory = "morning" | "afternoon" | "evening" | "night";
+
+export function getLocalScanCategory(iso: string): LocalScanCategory {
+  const h = new Date(iso).getHours();
+  if (h >= 5 && h < 12) return "morning";
+  if (h >= 12 && h < 17) return "afternoon";
+  if (h >= 17 && h < 21) return "evening";
+  return "night";
+}
+
+export function getLocalScanCategoryLabel(cat: LocalScanCategory): string {
+  if (cat === "morning") return "Morning Scan";
+  if (cat === "afternoon") return "Afternoon Scan";
+  if (cat === "evening") return "Evening Scan";
+  return "Night Scan";
 }
 
 export type ScanRow = {

@@ -23,7 +23,7 @@ import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { MiniScoreArc } from "@/components/app/score-arc";
 import { supabase } from "@/integrations/supabase/client";
-import { deleteScan, listMyScans, type ScanRow } from "@/lib/skin-analysis.functions";
+import { deleteScan, listMyScans, type ScanRow, getLocalScanCategory, getLocalScanCategoryLabel, type LocalScanCategory } from "@/lib/skin-analysis.functions";
 
 export const Route = createFileRoute("/history/")({
   ssr: false,
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/history/")({
 });
 
 type TimeRange = "all" | "month" | "3m" | "6m";
-type ScanTypeFilter = { morning: boolean; night: boolean };
+type ScanTypeFilter = Record<LocalScanCategory, boolean>;
 type SortBy = "newest" | "oldest" | "highest" | "lowest";
 
 type QuickChip = "all" | "month" | "3m";
@@ -62,10 +62,7 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
-function getLocalScanType(iso: string) {
-  const h = new Date(iso).getHours();
-  return h >= 5 && h < 17 ? "morning" : "night";
-}
+
 
 function HistoryPage() {
   const navigate = useNavigate();
@@ -79,7 +76,7 @@ function HistoryPage() {
   // Filters
   const [quickChip, setQuickChip] = useState<QuickChip>("all");
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
-  const [scanTypeFilter, setScanTypeFilter] = useState<ScanTypeFilter>({ morning: true, night: true });
+  const [scanTypeFilter, setScanTypeFilter] = useState<ScanTypeFilter>({ morning: true, afternoon: true, evening: true, night: true });
   const [sortBy, setSortBy] = useState<SortBy>("newest");
 
   // Sheets
@@ -128,9 +125,8 @@ function HistoryPage() {
     const cutoff = days ? Date.now() - days * 86400 * 1000 : null;
     let list = rows.filter((r) => {
       if (cutoff && new Date(r.created_at).getTime() < cutoff) return false;
-      const localType = getLocalScanType(r.created_at);
-      if (localType === "morning" && !scanTypeFilter.morning) return false;
-      if (localType === "night" && !scanTypeFilter.night) return false;
+      const localType = getLocalScanCategory(r.created_at);
+      if (!scanTypeFilter[localType]) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -290,8 +286,8 @@ function HistoryPage() {
                           {fmtDate(r.created_at)} · {fmtTime(r.created_at)}
                         </p>
                         <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          {getLocalScanType(r.created_at) === "night" ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
-                          {getLocalScanType(r.created_at) === "night" ? "Night Scan" : "Morning Scan"}
+                          {getLocalScanCategory(r.created_at) === "evening" || getLocalScanCategory(r.created_at) === "night" ? <Moon className="h-3 w-3" /> : <Sun className="h-3 w-3" />}
+                          {getLocalScanCategoryLabel(getLocalScanCategory(r.created_at))}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {r.concerns?.length ? r.concerns.map((c) => c.name).slice(0, 3).join(", ") : "No concerns detected"}
@@ -443,9 +439,9 @@ function FiltersSheet({
 
         <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Scan Type</p>
         <div className="mt-2 space-y-2">
-          {(["morning", "night"] as const).map((k) => {
+          {(["morning", "afternoon", "evening", "night"] as const).map((k) => {
             const on = scanTypeFilter[k];
-            const Icon = k === "morning" ? Sun : Moon;
+            const Icon = k === "evening" || k === "night" ? Moon : Sun;
             return (
               <button
                 key={k}
@@ -456,7 +452,7 @@ function FiltersSheet({
                 }`}
               >
                 <span className="inline-flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" /> {k === "morning" ? "Morning Scan" : "Night Scan"}
+                  <Icon className="h-4 w-4 text-primary" /> {getLocalScanCategoryLabel(k)}
                 </span>
                 <span
                   className={`flex h-5 w-5 items-center justify-center rounded ${
@@ -636,11 +632,11 @@ function CalendarSheet({
                     onClick={() => onSelectScan(r.id)}
                     className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-border/70 bg-card px-3 py-2 text-left"
                   >
-                    {getLocalScanType(r.created_at) === "night" ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
+                    {getLocalScanCategory(r.created_at) === "evening" || getLocalScanCategory(r.created_at) === "night" ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{fmtTime(r.created_at)}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {getLocalScanType(r.created_at) === "night" ? "Night Scan" : "Morning Scan"}
+                        {getLocalScanCategoryLabel(getLocalScanCategory(r.created_at))}
                       </p>
                     </div>
                     <span className={`text-sm font-semibold ${scoreLabel(r.overall_score).cls}`}>

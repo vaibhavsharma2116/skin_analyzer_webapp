@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MiniScoreArc } from "@/components/app/score-arc";
 import { METRIC_META, METRIC_ORDER, normalizeMetrics, scoreTone } from "@/components/app/metric-tokens";
 import { supabase } from "@/integrations/supabase/client";
-import { getScansForCompare, listMyScans, type ScanRow } from "@/lib/skin-analysis.functions";
+import { getScansForCompare, listMyScans, type ScanRow, getLocalScanCategory, getLocalScanCategoryLabel } from "@/lib/skin-analysis.functions";
 
 const searchSchema = z.object({
   a: z.string().uuid().optional(),
@@ -213,7 +213,7 @@ function ComparePage() {
                       {new Date(s.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                     <p className="truncate text-xs text-muted-foreground capitalize">
-                      {new Date(s.created_at).getHours() >= 5 && new Date(s.created_at).getHours() < 17 ? "morning" : "night"} scan
+                      {getLocalScanCategoryLabel(getLocalScanCategory(s.created_at))}
                     </p>
                   </div>
                   <span className={`text-sm font-semibold ${scoreTone(s.overall_score).cls}`}>{s.overall_score}</span>

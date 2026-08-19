@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ExternalLink, Loader2, Sparkles } from "lucide-react";
-import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { getSharedScan, type SharedScan } from "@/lib/skin-analysis.functions";
 import { ScanResultsView } from "@/components/app/scan-results-view";
+import { Navbar } from "@/components/layout/navbar";
+import logoAsset from "@/assets/sknpop-logo.png.asset.json";
 
 export const Route = createFileRoute("/s/$token")({
   loader: async ({ params }) => {
@@ -43,26 +44,58 @@ export const Route = createFileRoute("/s/$token")({
   },
   component: SharedScanPage,
   pendingComponent: () => (
-    <DeviceFrame title="Shared Scan">
-      <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <p className="text-sm">Loading shared scan…</p>
-      </div>
-    </DeviceFrame>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 mx-auto w-full max-w-3xl p-4 md:p-8 pt-10">
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm">Loading shared scan…</p>
+        </div>
+      </main>
+      <Footer />
+    </div>
   ),
   errorComponent: () => (
-    <DeviceFrame title="Shared Scan">
-      <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral">
-        This link is invalid or has been revoked.
-      </div>
-    </DeviceFrame>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 mx-auto w-full max-w-3xl p-4 md:p-8 pt-10">
+        <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral text-center">
+          This link is invalid or has been revoked.
+        </div>
+      </main>
+      <Footer />
+    </div>
   ),
   notFoundComponent: () => (
-    <DeviceFrame title="Shared Scan">
-      <p className="text-sm text-muted-foreground">Shared scan not found.</p>
-    </DeviceFrame>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 mx-auto w-full max-w-3xl p-4 md:p-8 pt-10">
+        <p className="text-sm text-muted-foreground text-center py-16">Shared scan not found.</p>
+      </main>
+      <Footer />
+    </div>
   ),
 });
+
+function Footer() {
+  return (
+    <footer className="border-t border-border py-10 text-center">
+      <img
+        src={logoAsset.url}
+        alt="SKNPOP Skincare"
+        className="mx-auto h-10 w-auto"
+        width={200}
+        height={50}
+      />
+      <p className="mt-3 text-sm text-muted-foreground">
+        AI-powered skincare intelligence
+      </p>
+      <p className="mt-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+        © {new Date().getFullYear()} · Decoded by AI
+      </p>
+    </footer>
+  );
+}
 
 function scoreLabel(score: number) {
   if (score >= 85) return { label: "Excellent", tone: "text-sage" };
@@ -82,29 +115,38 @@ function SharedScanPage() {
 
   if (!scan) {
     return (
-      <DeviceFrame title="Shared Scan">
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral">
-            This link is invalid or has been revoked.
+      <div className="flex min-h-screen flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 mx-auto w-full max-w-3xl p-4 md:p-8 pt-10">
+          <div className="space-y-4 max-w-md mx-auto">
+            <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral text-center">
+              This link is invalid or has been revoked.
+            </div>
+            <Link to="/">
+              <Button className="w-full rounded-2xl">Go home</Button>
+            </Link>
           </div>
-          <Link to="/">
-            <Button className="w-full rounded-2xl">Go home</Button>
-          </Link>
-        </div>
-      </DeviceFrame>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <DeviceFrame title="Shared Scan">
-      <ScanResultsView scan={scan as any} />
-      <div className="mt-5">
-        <Link to="/">
-          <Button size="lg" className="h-12 w-full rounded-2xl">
-            <ExternalLink className="mr-2 h-4 w-4" /> Get your own SKIN POP scan
-          </Button>
-        </Link>
-      </div>
-    </DeviceFrame>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 mx-auto w-full max-w-md md:max-w-3xl p-4 md:p-8 pt-6 md:pt-10">
+        <h1 className="text-2xl font-bold text-center mb-6">Skin Analysis Results</h1>
+        <ScanResultsView scan={scan as any} />
+        <div className="mt-8 flex justify-center max-w-md mx-auto">
+          <Link to="/" className="w-full">
+            <Button size="lg" className="h-14 w-full rounded-2xl">
+              <ExternalLink className="mr-2 h-5 w-5" /> Get your own SKIN POP scan
+            </Button>
+          </Link>
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 }
