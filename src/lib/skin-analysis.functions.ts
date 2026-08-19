@@ -114,7 +114,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  const modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash"];
   let lastError: Error = new Error("AI request failed");
   
   // Extract mime type and base64 data from the data URL
@@ -154,7 +154,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
           temperature: 0.4,
         }
       }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) {
