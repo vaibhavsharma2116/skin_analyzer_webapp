@@ -340,11 +340,17 @@ function matchProductToStep(title: string, products: ShopifyProduct[] | undefine
 function AdviceTab({ scan }: { scan: ScanRow }) {
   const preset = recommendationsFor(scan);
   
-  const { data: allProducts } = useQuery({
+  const { data: allProducts, isLoading } = useQuery({
     queryKey: ["shopify-all-products"],
     queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
     staleTime: 1000 * 60 * 5,
   });
+
+  const amMatched = preset.am.map(step => matchProductToStep(step.title, allProducts)).filter(Boolean) as ShopifyProduct[];
+  const pmMatched = preset.pm.map(step => matchProductToStep(step.title, allProducts)).filter(Boolean) as ShopifyProduct[];
+  
+  const recommendedProducts = Array.from(new Map([...amMatched, ...pmMatched].map(p => [p.id, p])).values());
+
   return (
     <div className="space-y-4">
       <section>
@@ -352,13 +358,15 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
         <p className="text-xs text-muted-foreground">Recommendations based on your skin analysis</p>
       </section>
 
-      <section>
-        <h4 className="text-sm font-semibold flex items-center gap-2">
-          <ShoppingBag className="h-4 w-4 text-primary" />
-          Recommended for You
-        </h4>
-        <ShopifyProductList scan={scan} />
-      </section>
+      {recommendedProducts.length > 0 || isLoading ? (
+        <section>
+          <h4 className="text-sm font-semibold flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4 text-primary" />
+            Recommended for You
+          </h4>
+          <ShopifyProductList products={recommendedProducts} isLoading={isLoading} />
+        </section>
+      ) : null}
 
       <section>
         <h4 className="text-sm font-semibold">Routine Recommendations</h4>
@@ -459,15 +467,7 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
   );
 }
 
-function ShopifyProductList({ scan }: { scan: ScanRow }) {
-  const concerns = scan.concerns.map(c => c.name);
-  
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["shopify-recommendations", concerns],
-    queryFn: () => getShopifyRecommendations({ data: { concerns: concerns.length > 0 ? concerns : ["skincare"] } }),
-    staleTime: 1000 * 60 * 5,
-  });
-
+function ShopifyProductList({ products, isLoading }: { products: ShopifyProduct[], isLoading: boolean }) {
   if (isLoading) {
     return <div className="mt-2 text-xs text-muted-foreground animate-pulse">Loading recommended products from SKNPOP...</div>;
   }
