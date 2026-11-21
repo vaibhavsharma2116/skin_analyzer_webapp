@@ -96,8 +96,10 @@ function RecommendedProducts() {
         ))}
       </div>
 
-      <Button className="mt-6 h-12 w-full rounded-2xl" onClick={() => navigate({ to: "/recommendations/routine" })}>
-        Continue to Routine Builder
+      <Button asChild className="mt-6 h-12 w-full rounded-2xl">
+        <Link to="/recommendations/routine">
+          Continue to Routine Builder
+        </Link>
       </Button>
     </DeviceFrame>
   );

@@ -53,8 +53,8 @@ function SaveAndFollow() {
     setStatus("saving");
     setError(null);
     try {
-      const amSteps = preset.am.filter((s) => builder.am.includes(s.id)).map((s) => s.title);
-      const pmSteps = preset.pm.filter((s) => builder.pm.includes(s.id)).map((s) => s.title);
+      const amSteps = preset.am.filter((s) => builder.am.includes(s.id) || builder.am.includes(s.title)).map((s) => s.title);
+      const pmSteps = preset.pm.filter((s) => builder.pm.includes(s.id) || builder.pm.includes(s.title)).map((s) => s.title);
       let didAm = false, didPm = false;
       if (amSteps.length > 0) {
         await addReminder({ data: {

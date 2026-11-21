@@ -43,10 +43,20 @@ function RoutineBuilder() {
   const navigate = useNavigate();
   const fetchLatest = useServerFn(getLatestScan);
   const [scan, setScan] = useState<ScanRow | null>(null);
+  const [loadingScan, setLoadingScan] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetchLatest().then((r) => { if (active) setScan((r as ScanRow | null) ?? null); }).catch(() => {});
+    fetchLatest()
+      .then((r) => {
+        if (active) {
+          setScan((r as ScanRow | null) ?? null);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoadingScan(false);
+      });
     return () => { active = false; };
   }, [fetchLatest]);
 
@@ -64,19 +74,28 @@ function RoutineBuilder() {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (initialized) return;
+    // Only initialize once scan loading has completed to ensure correct AI preset IDs
+    if (loadingScan) return;
+
     const stored = read();
+    const currentAmIds = new Set(preset.am.map((s) => s.id));
+    const currentPmIds = new Set(preset.pm.map((s) => s.id));
+
     if (stored) {
-      setAmSel(new Set(stored.am));
-      setPmSel(new Set(stored.pm));
-      setAmTime(stored.amTime);
-      setPmTime(stored.pmTime);
+      const validAm = stored.am.filter((id) => currentAmIds.has(id));
+      const validPm = stored.pm.filter((id) => currentPmIds.has(id));
+
+      // If stored selection matches current preset, use it; otherwise select all steps
+      setAmSel(new Set(validAm.length > 0 ? validAm : preset.am.map((s) => s.id)));
+      setPmSel(new Set(validPm.length > 0 ? validPm : preset.pm.map((s) => s.id)));
+      if (stored.amTime) setAmTime(stored.amTime);
+      if (stored.pmTime) setPmTime(stored.pmTime);
     } else {
       setAmSel(new Set(preset.am.map((s) => s.id)));
       setPmSel(new Set(preset.pm.map((s) => s.id)));
     }
     setInitialized(true);
-  }, [preset, initialized]);
+  }, [preset, loadingScan]);
 
   const toggle = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
     const next = new Set(set);
@@ -96,42 +115,50 @@ function RoutineBuilder() {
     >
       <p className="text-sm text-muted-foreground">Tap steps to include them in your routine. You can set reminders next.</p>
 
-      <SlotEditor
-        title="Morning Routine"
-        icon={<Sun className="h-4 w-4" />}
-        steps={preset.am}
-        selected={amSel}
-        onToggle={(id) => toggle(amSel, setAmSel, id)}
-        time={amTime}
-        onTime={setAmTime}
-        allProducts={allProducts}
-      />
-      <SlotEditor
-        title="Evening Routine"
-        icon={<Moon className="h-4 w-4" />}
-        steps={preset.pm}
-        selected={pmSel}
-        onToggle={(id) => toggle(pmSel, setPmSel, id)}
-        time={pmTime}
-        onTime={setPmTime}
-        allProducts={allProducts}
-      />
+      {loadingScan && !initialized ? (
+        <div className="mt-8 text-center text-sm text-muted-foreground animate-pulse">
+          Loading your personalized routine...
+        </div>
+      ) : (
+        <>
+          <SlotEditor
+            title="Morning Routine"
+            icon={<Sun className="h-4 w-4" />}
+            steps={preset.am}
+            selected={amSel}
+            onToggle={(id) => toggle(amSel, setAmSel, id)}
+            time={amTime}
+            onTime={setAmTime}
+            allProducts={allProducts}
+          />
+          <SlotEditor
+            title="Evening Routine"
+            icon={<Moon className="h-4 w-4" />}
+            steps={preset.pm}
+            selected={pmSel}
+            onToggle={(id) => toggle(pmSel, setPmSel, id)}
+            time={pmTime}
+            onTime={setPmTime}
+            allProducts={allProducts}
+          />
 
-      <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4 text-xs text-muted-foreground">
-        <p className="font-semibold text-foreground">Selected</p>
-        <p className="mt-1">AM: {amSel.size} steps at {amTime}</p>
-        <p>PM: {pmSel.size} steps at {pmTime}</p>
-      </div>
+          <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">Selected</p>
+            <p className="mt-1">AM: {amSel.size} steps at {amTime}</p>
+            <p>PM: {pmSel.size} steps at {pmTime}</p>
+          </div>
 
-      <Button className="mt-6 h-12 w-full rounded-2xl" onClick={save} disabled={amSel.size + pmSel.size === 0}>
-        Save Routine & Set Reminders
-      </Button>
+          <Button className="mt-6 h-12 w-full rounded-2xl" onClick={save} disabled={amSel.size + pmSel.size === 0}>
+            Save Routine & Set Reminders
+          </Button>
+        </>
+      )}
     </DeviceFrame>
   );
 }
 
 function SlotEditor({
-  title, icon, steps, selected, onToggle, time, onTime,
+  title, icon, steps, selected, onToggle, time, onTime, allProducts,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -159,12 +186,16 @@ function SlotEditor({
           const matchedProduct = matchProductToStep(s.title, allProducts);
           return (
             <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => onToggle(s.id)}
+              <div
                 className={`flex w-full flex-col gap-3 rounded-xl border p-3 text-left transition ${on ? "border-primary bg-primary/5" : "border-border/70 bg-secondary/30"}`}
               >
-                <div className="flex w-full items-center gap-3">
+                <div 
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onToggle(s.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(s.id); } }}
+                  className="flex w-full cursor-pointer items-center gap-3 select-none"
+                >
                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
                     {on && <span className="text-[11px]">✓</span>}
                   </span>
@@ -177,26 +208,25 @@ function SlotEditor({
                 {matchedProduct && (
                   <div className="ml-9 flex w-[calc(100%-2.25rem)] items-center gap-3 rounded-xl border border-border/70 bg-background/50 p-2 text-left">
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                      {matchedProduct.images.edges[0]?.node?.url && (
+                      {matchedProduct.images?.edges?.[0]?.node?.url && (
                         <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
                       )}
                     </div>
                     <div className="flex flex-1 flex-col justify-center">
                       <div className="text-xs font-bold text-primary">
-                        {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
+                        {matchedProduct.priceRange?.minVariantPrice?.currencyCode === 'INR' ? '₹' : (matchedProduct.priceRange?.minVariantPrice?.currencyCode || '₹')} {parseFloat(matchedProduct.priceRange?.minVariantPrice?.amount || '0').toLocaleString()}
                       </div>
                       <a 
                         href={`https://sknpop.in/products/${matchedProduct.handle}`} 
                         target="_blank" rel="noopener noreferrer" 
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-1 flex w-fit items-center justify-center rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground"
+                        className="mt-1 flex w-fit items-center justify-center rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground transition-opacity hover:opacity-90"
                       >
                         Buy Now
                       </a>
                     </div>
                   </div>
                 )}
-              </button>
+              </div>
             </li>
           );
         })}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { searchShopifyProducts, type ShopifyProduct } from "./shopify";
+export type { ShopifyProduct };
 
 const RecommendInput = z.object({
   concerns: z.array(z.string()).min(1),
