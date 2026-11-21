@@ -2,15 +2,19 @@ import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-ro
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Camera, Loader2, RefreshCw, Share2, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, RefreshCw, ScanFace, Share2, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { ShareScanSheet } from "@/components/app/share-scan-sheet";
 import { ScanResultsView } from "@/components/app/scan-results-view";
 import { supabase } from "@/integrations/supabase/client";
-import { analyzeSkinPhoto, setCachedLatestScan, type ScanRow, type SkinAnalysisResult } from "@/lib/skin-analysis.functions";
+import {
+  analyzeSkinPhoto,
+  setCachedLatestScan,
+  type ScanRow,
+  type SkinAnalysisResult,
+} from "@/lib/skin-analysis.functions";
 import { getShopifyRecommendations } from "@/lib/shopify.functions";
-
 
 export const Route = createFileRoute("/analysis")({
   ssr: false,
@@ -23,7 +27,8 @@ export const Route = createFileRoute("/analysis")({
       { title: "Skin Analysis — SKIN POP" },
       {
         name: "description",
-        content: "AI-powered skin analysis results: your skin score, concerns, skin age and personalized tips.",
+        content:
+          "AI-powered skin analysis results: your skin score, concerns, skin age and personalized tips.",
       },
     ],
   }),
@@ -41,8 +46,6 @@ const LOADING_STEPS = [
 ];
 
 const SCAN_FINGERPRINT_STORAGE_KEY = "skinpop:lastScanFingerprint";
-
-
 
 function AnalysisPage() {
   const navigate = useNavigate();
@@ -83,7 +86,7 @@ function AnalysisPage() {
       try {
         const row = await analyze({ data: { imageDataUrl: imageDataUrl!, faceFingerprint } });
         clearInterval(timer);
-        setResult(row as Result);
+        setResult(row as unknown as Result);
         setStatus("ready");
 
         // Immediately cache the scan result so recommendations load in 0ms
@@ -106,7 +109,7 @@ function AnalysisPage() {
         } catch {
           // ignore cache errors
         }
-        
+
         // Push Notification logic for "push_scan"
         try {
           const raw = localStorage.getItem("skinpop.settings.notifications");
@@ -126,7 +129,7 @@ function AnalysisPage() {
         }
       } catch (e: unknown) {
         let msg = e instanceof Error ? e.message : "Analysis failed. Please try again.";
-        
+
         // If Nginx cuts the connection (504), the backend is likely still processing it.
         // We automatically retry. The next request will hit the Supabase cache instantly!
         if (msg.includes("504") && retries > 0) {
@@ -137,7 +140,7 @@ function AnalysisPage() {
         clearInterval(timer);
         // Avoid rendering raw HTML if the error message contains it, but still show the text
         if (/<[a-z][\s\S]*>/i.test(msg)) {
-          msg = "Server Error: " + msg.replace(/<[^>]*>?/gm, ' ').substring(0, 150) + "...";
+          msg = "Server Error: " + msg.replace(/<[^>]*>?/gm, " ").substring(0, 150) + "...";
         }
         setError(msg);
         setStatus("error");
@@ -165,7 +168,11 @@ function AnalysisPage() {
         <div className="space-y-5">
           {image && (
             <div className="relative overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-sm">
-              <img src={image} alt="Your scan" className="aspect-[3/4] w-full object-cover opacity-90" />
+              <img
+                src={image}
+                alt="Your scan"
+                className="aspect-[3/4] w-full object-cover opacity-90"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent" />
               <div className="absolute inset-x-0 top-0 h-1 animate-pulse bg-primary/70" />
             </div>
@@ -173,15 +180,21 @@ function AnalysisPage() {
           <div className="rounded-[28px] bg-gradient-card px-5 py-6 text-center shadow-sm">
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
             <p className="mt-3 text-base font-semibold">AI is analyzing your skin</p>
-            <p className="mt-1 text-sm text-muted-foreground transition-opacity">{LOADING_STEPS[stepIdx]}</p>
+            <p className="mt-1 text-sm text-muted-foreground transition-opacity">
+              {LOADING_STEPS[stepIdx]}
+            </p>
           </div>
-          <p className="text-center text-xs text-muted-foreground">This usually takes 10–20 seconds.</p>
+          <p className="text-center text-xs text-muted-foreground">
+            This usually takes 10–20 seconds.
+          </p>
         </div>
       </DeviceFrame>
     );
   }
 
   if (status === "error") {
+    const isFaceError =
+      error?.includes("चेहरा डिटेक्ट") || error?.includes("No human face detected");
     return (
       <DeviceFrame
         title="Analysis"
@@ -192,9 +205,16 @@ function AnalysisPage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-[28px] border border-coral/40 bg-coral/5 px-5 py-6 text-center">
-            <p className="text-base font-semibold text-coral">We couldn't analyze your photo</p>
-            <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+          <div className="rounded-[28px] border border-destructive/40 bg-destructive/10 px-5 py-6 text-center shadow-sm">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+              <ScanFace className="h-7 w-7" />
+            </div>
+            <p className="text-base font-bold text-destructive">
+              {isFaceError
+                ? "चेहरा डिटेक्ट नहीं हुआ (Face Not Detected)"
+                : "We couldn't analyze your photo"}
+            </p>
+            <p className="mt-2 text-sm text-foreground/90 font-medium">{error}</p>
           </div>
           <Button size="lg" className="h-12 w-full rounded-2xl" onClick={rescan}>
             <Camera className="mr-2 h-4 w-4" /> Try another scan
@@ -236,7 +256,12 @@ function AnalysisPage() {
             <Sparkles className="mr-2 h-4 w-4" /> View AI Recommendations
           </Link>
         </Button>
-        <Button variant="outline" size="lg" className="h-12 w-full rounded-2xl" onClick={() => setShareOpen(true)}>
+        <Button
+          variant="outline"
+          size="lg"
+          className="h-12 w-full rounded-2xl"
+          onClick={() => setShareOpen(true)}
+        >
           <Share2 className="mr-2 h-4 w-4" /> Share results
         </Button>
         <Button variant="outline" size="lg" className="h-12 w-full rounded-2xl" onClick={rescan}>
@@ -254,4 +279,3 @@ function AnalysisPage() {
     </DeviceFrame>
   );
 }
-

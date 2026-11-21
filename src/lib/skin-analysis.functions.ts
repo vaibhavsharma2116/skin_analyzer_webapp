@@ -27,6 +27,8 @@ const MetricsSchema = z.object({
 export type ScanMetrics = z.infer<typeof MetricsSchema>;
 
 const AnalysisResultSchema = z.object({
+  is_valid_face: z.boolean().default(true),
+  validation_error: z.string().nullable().optional(),
   overall_score: z.number().int().min(0).max(100),
   skin_age: z.number().int().min(5).max(100),
   skin_type: z.enum(["oily", "dry", "combination", "normal", "sensitive"]),
@@ -48,12 +50,44 @@ const AnalysisResultSchema = z.object({
 export type SkinAnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
 const SYSTEM_PROMPT = `You are SKIN POP, a professional AI dermatology assistant.
+
+CRITICAL FIRST VALIDATION RULE (HUMAN FACE GATEKEEPER):
+Before performing any skin analysis, inspect the image to determine whether it contains a REAL HUMAN FACE.
+- If the image is of a WALL, ceiling, floor, furniture, table, blank screen, paper, background pattern, fabric, an animal/pet, vehicle, food, cartoon/illustration, or ANY inanimate object without a clear human face:
+  You MUST set:
+  {
+    "is_valid_face": false,
+    "validation_error": "चेहरा डिटेक्ट नहीं हुआ! कृपया अपने चेहरे की साफ सेल्फी अपलोड करें। (No human face detected. Please upload a clear photo of your face.)",
+    "overall_score": 0,
+    "skin_age": 25,
+    "skin_type": "normal",
+    "summary": "No human face was detected in this image. Please upload a clear selfie of your face with good lighting to get an accurate skin assessment.",
+    "metrics": { "hydration": 50, "oil_balance": 50, "texture": 50, "pores": 50, "evenness": 50, "elasticity": 50 },
+    "concerns": [],
+    "recommendations": [
+      "MORNING: 2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml | Gentle daily face cleanser | 🫧",
+      "MORNING: Vitamin C Radiance Repair Face Serum – 30 ml | Daily antioxidant glow | 🍊",
+      "MORNING: Barrier Repair Moisturizer – 50 g | Daily hydration seal | 🧴",
+      "MORNING: SPF 60 Gel Sunscreen | Broad spectrum protection | ☀️",
+      "EVENING: 2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml | Night cleanse | 🧼",
+      "EVENING: Anti-Aging & Skin Renewal Face Serum - 30ml | Night renewal | 🌙",
+      "EVENING: Barrier Repair Moisturizer – 50 g | Night recovery | 🌜",
+      "USE: Gentle Cleanser",
+      "AVOID: Harsh scrubs",
+      "LIFESTYLE: Drink water daily",
+      "BULLET: Please upload a clear human face selfie for clinical skin analysis"
+    ]
+  }
+- ONLY when a real human face is clearly visible, set "is_valid_face": true, "validation_error": null, and proceed with full clinical analysis.
+
 Analyze the user's selfie and return a highly personalized, detailed skin assessment.
 Base your evaluation on visible cues only: tone evenness, texture, hydration signs, oil/shine, pores, redness, dark spots, fine lines, and blemishes.
 You are NOT diagnosing medical conditions — provide cosmetic-grade guidance only.
 
 Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
 {
+  "is_valid_face": true | false,
+  "validation_error": null | string,
   "overall_score": integer 0-100 (higher = healthier looking skin),
   "skin_age": integer estimated apparent skin age in years,
   "skin_type": "oily" | "dry" | "combination" | "normal" | "sensitive",
@@ -219,7 +253,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
     
     // Process successful response
     const json = await res.json() as any;
-    const content = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const content = json.candidates?.[0]?.content?.parts?.find((p: any) => typeof p.text === "string")?.text ?? "";
     
     let parsed: unknown;
     try {
@@ -230,9 +264,19 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
       parsed = JSON.parse(match[0]);
     }
     const result = AnalysisResultSchema.parse(parsed);
+    if (!result.is_valid_face) {
+      throw new Error(
+        result.validation_error ||
+        "चेहरा डिटेक्ट नहीं हुआ! कृपया अपने चेहरे की साफ सेल्फी अपलोड करें। (No human face detected. Please upload a clear photo of your face.)"
+      );
+    }
     return { result, model };
 
   } catch (err) {
+    // If it's a face validation rejection, do not fallback or retry; immediately reject
+    if (err instanceof Error && (err.message.includes("चेहरा डिटेक्ट") || err.message.includes("No human face detected"))) {
+      throw err;
+    }
     lastError = err instanceof Error ? err : new Error(String(err));
     continue;
   }

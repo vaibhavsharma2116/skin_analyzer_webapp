@@ -16,13 +16,33 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ScoreArc } from "./score-arc";
 import { RadarChart } from "./radar-chart";
-import { METRIC_META, METRIC_ORDER, normalizeMetrics, overallLabel, scoreTone } from "./metric-tokens";
+import {
+  METRIC_META,
+  METRIC_ORDER,
+  normalizeMetrics,
+  overallLabel,
+  scoreTone,
+} from "./metric-tokens";
 import type { ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor } from "@/lib/recommendations";
 import { useQuery } from "@tanstack/react-query";
-import { getShopifyRecommendations, getAllShopifyProducts, type ShopifyProduct } from "@/lib/shopify.functions";
+import {
+  getShopifyRecommendations,
+  getAllShopifyProducts,
+  type ShopifyProduct,
+} from "@/lib/shopify.functions";
 import { ShoppingBag } from "lucide-react";
-type TabKey = "overview" | "concerns" | "analysis" | "advice";
+import { BeforeAfterProjection } from "./before-after-projection";
+
+type TabKey = "overview" | "projection" | "concerns" | "analysis" | "advice";
+
+const TABS: { id: TabKey; label: string; badge?: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "projection", label: "Before & After", badge: "8-12W" },
+  { id: "concerns", label: "Concerns" },
+  { id: "analysis", label: "Analysis" },
+  { id: "advice", label: "Advice" },
+];
 
 export function ScanResultsView({
   scan,
@@ -56,17 +76,22 @@ export function ScanResultsView({
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-border/70 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {(["overview", "concerns", "analysis", "advice"] as const).map((t) => (
+        {TABS.map((t) => (
           <button
-            key={t}
+            key={t.id}
             type="button"
-            onClick={() => setTab(t)}
-            className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-semibold capitalize transition-colors ${
-              tab === t ? "text-primary" : "text-muted-foreground"
+            onClick={() => setTab(t.id)}
+            className={`relative flex items-center gap-1.5 whitespace-nowrap px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${
+              tab === t.id ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t}
-            {tab === t && (
+            {t.label}
+            {t.badge && (
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                {t.badge}
+              </span>
+            )}
+            {tab === t.id && (
               <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
             )}
           </button>
@@ -74,8 +99,16 @@ export function ScanResultsView({
       </div>
 
       {tab === "overview" && (
-        <OverviewTab scan={scan} previous={previous ?? null} metrics={metrics} prevMetrics={prevMetrics} scoreDelta={scoreDelta} />
+        <OverviewTab
+          scan={scan}
+          previous={previous ?? null}
+          metrics={metrics}
+          prevMetrics={prevMetrics}
+          scoreDelta={scoreDelta}
+          onViewProjection={() => setTab("projection")}
+        />
       )}
+      {tab === "projection" && <BeforeAfterProjection scan={scan} />}
       {tab === "concerns" && <ConcernsTab scan={scan} />}
       {tab === "analysis" && <AnalysisTab scan={scan} metrics={metrics} />}
       {tab === "advice" && <AdviceTab scan={scan} />}
@@ -91,12 +124,14 @@ function OverviewTab({
   metrics,
   prevMetrics,
   scoreDelta,
+  onViewProjection,
 }: {
   scan: ScanRow;
   previous: ScanRow | null;
   metrics: ReturnType<typeof normalizeMetrics>;
   prevMetrics: ReturnType<typeof normalizeMetrics> | null;
   scoreDelta: number | null;
+  onViewProjection?: () => void;
 }) {
   const scoreT = scoreTone(scan.overall_score);
   const hydT = scoreTone(metrics.hydration);
@@ -108,36 +143,90 @@ function OverviewTab({
         <div className="absolute right-0 top-0 opacity-[0.03] text-primary">
           <Sparkles className="h-32 w-32 -translate-y-6 translate-x-6" />
         </div>
-        
+
         <div className="relative flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary shadow-sm">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">Clinical AI Assessment</h3>
-            <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">SKIN POP AI Engine</p>
+            <p className="text-[10px] uppercase tracking-wider text-primary font-semibold">
+              SKIN POP AI Engine
+            </p>
           </div>
         </div>
-        
+
         <div className="relative z-10">
           <div className="absolute bottom-0 left-0 top-0 w-0.5 rounded-full bg-primary/30"></div>
           <p className="pl-4 text-[13px] text-foreground/80 leading-relaxed whitespace-pre-wrap font-medium">
-            {scan.summary ?? "Here's a quick overview of your skin health based on our AI analysis."}
+            {scan.summary ??
+              "Here's a quick overview of your skin health based on our AI analysis."}
           </p>
         </div>
       </section>
 
+      {/* 8 & 12 Week Transformation Teaser Card */}
+      <section className="relative overflow-hidden rounded-[24px] border border-primary/30 bg-gradient-to-r from-primary/15 via-primary/5 to-card p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-foreground">8 & 12 Weeks Projection</h4>
+                <span className="rounded-full bg-primary/20 px-2 py-0.2 text-[10px] font-bold text-primary shrink-0">
+                  New
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                Preview your skin transformation with SKNPOP serums
+              </p>
+            </div>
+          </div>
+          {onViewProjection && (
+            <button
+              type="button"
+              onClick={onViewProjection}
+              className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-95"
+            >
+              Preview →
+            </button>
+          )}
+        </div>
+      </section>
+
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <SummaryTile label="Skin Score" value={`${scan.overall_score}`} suffix="/100" tone={scoreT} bar={scan.overall_score} />
+        <SummaryTile
+          label="Skin Score"
+          value={`${scan.overall_score}`}
+          suffix="/100"
+          tone={scoreT}
+          bar={scan.overall_score}
+        />
         <SummaryTile label="Skin Age" value={`${scan.skin_age ?? "—"}`} suffix="years" />
-        <SummaryTile label="Hydration" value={hydT.label} tone={hydT} bar={metrics.hydration} valueSize="lg" />
-        <SummaryTile label="Oil Balance" value={oilT.label} tone={oilT} bar={metrics.oil_balance} valueSize="lg" />
+        <SummaryTile
+          label="Hydration"
+          value={hydT.label}
+          tone={hydT}
+          bar={metrics.hydration}
+          valueSize="lg"
+        />
+        <SummaryTile
+          label="Oil Balance"
+          value={oilT.label}
+          tone={oilT}
+          bar={metrics.oil_balance}
+          valueSize="lg"
+        />
       </div>
 
       <section>
         <div className="flex items-baseline justify-between">
           <h3 className="text-sm font-semibold">Top Skin Concerns</h3>
-          <span className="text-[11px] text-muted-foreground">We found {scan.concerns?.length ?? 0} concerns</span>
+          <span className="text-[11px] text-muted-foreground">
+            We found {scan.concerns?.length ?? 0} concerns
+          </span>
         </div>
         <div className="mt-2 divide-y divide-border/70 rounded-2xl border border-border/70 bg-card">
           {scan.concerns?.slice(0, 4).map((c, i) => (
@@ -148,7 +237,9 @@ function OverviewTab({
                 </span>
                 <p className="text-sm">{c.name}</p>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}
+              >
                 {c.severity}
               </span>
             </div>
@@ -168,20 +259,27 @@ function OverviewTab({
       <section className="rounded-[28px] border border-border/70 bg-card p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold">Overall Skin Score</p>
-          <span className={`text-sm font-semibold ${scoreT.cls}`}>{overallLabel(scan.overall_score)}</span>
+          <span className={`text-sm font-semibold ${scoreT.cls}`}>
+            {overallLabel(scan.overall_score)}
+          </span>
         </div>
         <p className="mt-1 text-3xl font-semibold">
           {scan.overall_score}
           <span className="text-base font-normal text-muted-foreground"> /100</span>
         </p>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${scan.overall_score}%` }} />
+          <div
+            className="h-full rounded-full bg-primary"
+            style={{ width: `${scan.overall_score}%` }}
+          />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
           {scoreDelta !== null && previous ? (
             <>
               You've {scoreDelta >= 0 ? "improved" : "changed"} by{" "}
-              <span className={scoreDelta >= 0 ? "font-semibold text-sage" : "font-semibold text-coral"}>
+              <span
+                className={scoreDelta >= 0 ? "font-semibold text-sage" : "font-semibold text-coral"}
+              >
                 {scoreDelta >= 0 ? "+" : ""}
                 {scoreDelta} points
               </span>{" "}
@@ -193,13 +291,17 @@ function OverviewTab({
         </p>
         <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-2xl bg-muted/50 p-3 text-[11px] text-muted-foreground">
           <Info className="mt-0.5 h-3.5 w-3.5 text-primary" />
-          <p>This score is based on AI analysis and can vary with environment, lifestyle & routine.</p>
+          <p>
+            This score is based on AI analysis and can vary with environment, lifestyle & routine.
+          </p>
         </div>
       </section>
 
       <section>
         <h3 className="text-sm font-semibold">Skin Health Summary</h3>
-        <p className="text-xs text-muted-foreground">Your skin is overall healthy with minor concerns</p>
+        <p className="text-xs text-muted-foreground">
+          Your skin is overall healthy with minor concerns
+        </p>
         <ul className="mt-2 space-y-1.5 text-sm">
           {healthSummary(scan, metrics).map((line, i) => (
             <li key={i} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2">
@@ -225,7 +327,10 @@ function ConcernsTab({ scan }: { scan: ScanRow }) {
       <div className="space-y-3">
         {scan.concerns?.length ? (
           scan.concerns.map((c, i) => (
-            <div key={`${c.name}-${i}`} className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+            <div
+              key={`${c.name}-${i}`}
+              className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
+            >
               <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <span className="mt-0.5 shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -233,17 +338,23 @@ function ConcernsTab({ scan }: { scan: ScanRow }) {
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">{c.name}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{concernDescription(c.name)}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {concernDescription(c.name)}
+                    </p>
                   </div>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${severityColor(c.severity)}`}
+                >
                   {c.severity}
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-3 border-t border-border/50 pt-3">
                 <span className="text-[11px] text-muted-foreground">Severity</span>
                 <SeverityDots score={c.score} />
-                <span className="ml-auto text-[11px] font-semibold text-muted-foreground">{c.score}%</span>
+                <span className="ml-auto text-[11px] font-semibold text-muted-foreground">
+                  {c.score}%
+                </span>
               </div>
             </div>
           ))
@@ -256,7 +367,8 @@ function ConcernsTab({ scan }: { scan: ScanRow }) {
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-2xl bg-primary/10 p-4 text-xs text-primary">
         <Info className="mt-0.5 h-4 w-4" />
         <p>
-          <span className="font-semibold">Tip:</span> Consistency is key! Follow the recommended routine and protect your skin daily.
+          <span className="font-semibold">Tip:</span> Consistency is key! Follow the recommended
+          routine and protect your skin daily.
         </p>
       </div>
     </div>
@@ -265,7 +377,13 @@ function ConcernsTab({ scan }: { scan: ScanRow }) {
 
 /* ---------------- Analysis ---------------- */
 
-function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typeof normalizeMetrics> }) {
+function AnalysisTab({
+  scan,
+  metrics,
+}: {
+  scan: ScanRow;
+  metrics: ReturnType<typeof normalizeMetrics>;
+}) {
   return (
     <div className="space-y-4">
       <section>
@@ -280,7 +398,10 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
             const tone = scoreTone(v);
             const Icon = meta.icon;
             return (
-              <li key={k} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <li
+                key={k}
+                className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-3 first:pt-0 last:pb-0"
+              >
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
@@ -293,7 +414,10 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
                   </div>
                   <p className={`text-[11px] font-medium ${tone.cls}`}>{tone.label}</p>
                   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className={`h-full rounded-full ${toneBar(v)}`} style={{ width: `${Math.max(4, v)}%` }} />
+                    <div
+                      className={`h-full rounded-full ${toneBar(v)}`}
+                      style={{ width: `${Math.max(4, v)}%` }}
+                    />
                   </div>
                 </div>
               </li>
@@ -306,7 +430,8 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
         <div>
           <p className="font-semibold text-foreground">AI Analysis</p>
           <p className="mt-0.5 text-muted-foreground">
-            Our AI analyzes multiple factors to give you accurate results. Retake scan in different lighting for best accuracy.
+            Our AI analyzes multiple factors to give you accurate results. Retake scan in different
+            lighting for best accuracy.
           </p>
         </div>
       </div>
@@ -316,41 +441,69 @@ function AnalysisTab({ scan, metrics }: { scan: ScanRow; metrics: ReturnType<typ
 
 /* ---------------- Advice ---------------- */
 
-function matchProductToStep(title: string, products: ShopifyProduct[] | undefined): ShopifyProduct | null {
+function matchProductToStep(
+  title: string,
+  products: ShopifyProduct[] | undefined,
+): ShopifyProduct | null {
   if (!products) return null;
   const lowerTitle = title.toLowerCase();
-  
+
   if (lowerTitle.includes("cleanse")) {
-    return products.find(p => p.title.toLowerCase().includes("facewash") || p.title.toLowerCase().includes("cleanse")) || null;
+    return (
+      products.find(
+        (p) =>
+          p.title.toLowerCase().includes("facewash") || p.title.toLowerCase().includes("cleanse"),
+      ) || null
+    );
   }
   if (lowerTitle.includes("vitamin c")) {
-    return products.find(p => p.title.toLowerCase().includes("vitamin c")) || null;
+    return products.find((p) => p.title.toLowerCase().includes("vitamin c")) || null;
   }
   if (lowerTitle.includes("moisturizer")) {
-    return products.find(p => p.title.toLowerCase().includes("moisturizer")) || null;
+    return products.find((p) => p.title.toLowerCase().includes("moisturizer")) || null;
   }
-  if (lowerTitle.includes("niacinamide") || lowerTitle.includes("pigment") || lowerTitle.includes("dark")) {
-    return products.find(p => p.title.toLowerCase().includes("pigment") || p.title.toLowerCase().includes("niacinamide")) || null;
+  if (
+    lowerTitle.includes("niacinamide") ||
+    lowerTitle.includes("pigment") ||
+    lowerTitle.includes("dark")
+  ) {
+    return (
+      products.find(
+        (p) =>
+          p.title.toLowerCase().includes("pigment") ||
+          p.title.toLowerCase().includes("niacinamide"),
+      ) || null
+    );
   }
-  if (lowerTitle.includes("exfoliat") || lowerTitle.includes("scrub") || lowerTitle.includes("aha")) {
-    return products.find(p => p.title.toLowerCase().includes("scrub")) || null;
+  if (
+    lowerTitle.includes("exfoliat") ||
+    lowerTitle.includes("scrub") ||
+    lowerTitle.includes("aha")
+  ) {
+    return products.find((p) => p.title.toLowerCase().includes("scrub")) || null;
   }
   return null;
 }
 
 function AdviceTab({ scan }: { scan: ScanRow }) {
   const preset = recommendationsFor(scan);
-  
+
   const { data: allProducts, isLoading } = useQuery({
     queryKey: ["shopify-all-products"],
     queryFn: () => getAllShopifyProducts(),
     staleTime: 1000 * 60 * 5,
   });
 
-  const amMatched = preset.am.map(step => matchProductToStep(step.title, allProducts)).filter(Boolean) as ShopifyProduct[];
-  const pmMatched = preset.pm.map(step => matchProductToStep(step.title, allProducts)).filter(Boolean) as ShopifyProduct[];
-  
-  const recommendedProducts = Array.from(new Map([...amMatched, ...pmMatched].map(p => [p.id, p])).values());
+  const amMatched = preset.am
+    .map((step) => matchProductToStep(step.title, allProducts))
+    .filter(Boolean) as ShopifyProduct[];
+  const pmMatched = preset.pm
+    .map((step) => matchProductToStep(step.title, allProducts))
+    .filter(Boolean) as ShopifyProduct[];
+
+  const recommendedProducts = Array.from(
+    new Map([...amMatched, ...pmMatched].map((p) => [p.id, p])).values(),
+  );
 
   return (
     <div className="space-y-4">
@@ -381,32 +534,53 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             {preset.am.map((step, i) => {
               const matchedProduct = matchProductToStep(step.title, allProducts);
               return (
-              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
-                <span className="text-xs font-semibold text-muted-foreground pt-0.5">{i + 1}.</span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium">{matchedProduct ? matchedProduct.title : step.title}</span>
-                  {step.hint && !matchedProduct && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
-                  
-                  {matchedProduct && (
-                    <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
-                      <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                        {matchedProduct.images.edges[0]?.node?.url && (
-                          <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
-                        )}
+                <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
+                  <span className="text-xs font-semibold text-muted-foreground pt-0.5">
+                    {i + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium">
+                      {matchedProduct ? matchedProduct.title : step.title}
+                    </span>
+                    {step.hint && !matchedProduct && (
+                      <span className="ml-1 text-muted-foreground">- {step.hint}</span>
+                    )}
+
+                    {matchedProduct && (
+                      <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
+                        <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                          {matchedProduct.images.edges[0]?.node?.url && (
+                            <img
+                              src={matchedProduct.images.edges[0].node.url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <div className="text-xs font-bold text-primary">
+                            {matchedProduct.priceRange.minVariantPrice.currencyCode === "INR"
+                              ? "₹"
+                              : matchedProduct.priceRange.minVariantPrice.currencyCode}{" "}
+                            {parseFloat(
+                              matchedProduct.priceRange.minVariantPrice.amount,
+                            ).toLocaleString()}
+                          </div>
+                          <a
+                            href={`https://sknpop.in/products/${matchedProduct.handle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start"
+                          >
+                            Buy Now
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                         <div className="text-xs font-bold text-primary">
-                           {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
-                         </div>
-                         <a href={`https://sknpop.in/products/${matchedProduct.handle}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start">
-                           Buy Now
-                         </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </li>
-            )})}
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
 
@@ -419,32 +593,53 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
             {preset.pm.map((step, i) => {
               const matchedProduct = matchProductToStep(step.title, allProducts);
               return (
-              <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
-                <span className="text-xs font-semibold text-muted-foreground pt-0.5">{i + 1}.</span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium">{matchedProduct ? matchedProduct.title : step.title}</span>
-                  {step.hint && !matchedProduct && <span className="ml-1 text-muted-foreground">- {step.hint}</span>}
-                  
-                  {matchedProduct && (
-                    <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
-                      <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                        {matchedProduct.images.edges[0]?.node?.url && (
-                          <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
-                        )}
+                <li key={i} className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start">
+                  <span className="text-xs font-semibold text-muted-foreground pt-0.5">
+                    {i + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium">
+                      {matchedProduct ? matchedProduct.title : step.title}
+                    </span>
+                    {step.hint && !matchedProduct && (
+                      <span className="ml-1 text-muted-foreground">- {step.hint}</span>
+                    )}
+
+                    {matchedProduct && (
+                      <div className="mt-2 flex items-start gap-3 rounded-xl border border-border/70 p-2 bg-background/50">
+                        <div className="h-12 w-12 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                          {matchedProduct.images.edges[0]?.node?.url && (
+                            <img
+                              src={matchedProduct.images.edges[0].node.url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <div className="text-xs font-bold text-primary">
+                            {matchedProduct.priceRange.minVariantPrice.currencyCode === "INR"
+                              ? "₹"
+                              : matchedProduct.priceRange.minVariantPrice.currencyCode}{" "}
+                            {parseFloat(
+                              matchedProduct.priceRange.minVariantPrice.amount,
+                            ).toLocaleString()}
+                          </div>
+                          <a
+                            href={`https://sknpop.in/products/${matchedProduct.handle}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start"
+                          >
+                            Buy Now
+                          </a>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                         <div className="text-xs font-bold text-primary">
-                           {matchedProduct.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : matchedProduct.priceRange.minVariantPrice.currencyCode} {parseFloat(matchedProduct.priceRange.minVariantPrice.amount).toLocaleString()}
-                         </div>
-                         <a href={`https://sknpop.in/products/${matchedProduct.handle}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold uppercase py-1 px-3 rounded-full self-start">
-                           Buy Now
-                         </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </li>
-            )})}
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
@@ -468,9 +663,19 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
   );
 }
 
-function ShopifyProductList({ products, isLoading }: { products: ShopifyProduct[], isLoading: boolean }) {
+function ShopifyProductList({
+  products,
+  isLoading,
+}: {
+  products: ShopifyProduct[];
+  isLoading: boolean;
+}) {
   if (isLoading) {
-    return <div className="mt-2 text-xs text-muted-foreground animate-pulse">Loading recommended products from SKNPOP...</div>;
+    return (
+      <div className="mt-2 text-xs text-muted-foreground animate-pulse">
+        Loading recommended products from SKNPOP...
+      </div>
+    );
   }
 
   if (!products || products.length === 0) {
@@ -480,27 +685,32 @@ function ShopifyProductList({ products, isLoading }: { products: ShopifyProduct[
   return (
     <div className="mt-3 flex gap-3 overflow-x-auto pb-4 pt-1 px-1 snap-x">
       {products.map((product) => (
-        <a 
-          key={product.id} 
-          href={`https://sknpop.in/products/${product.handle}`} 
-          target="_blank" rel="noopener noreferrer"
+        <a
+          key={product.id}
+          href={`https://sknpop.in/products/${product.handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="min-w-[140px] max-w-[140px] flex-shrink-0 snap-start rounded-2xl border border-border bg-card shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow group"
         >
           <div className="aspect-square bg-muted relative overflow-hidden">
             {product.images.edges[0]?.node?.url ? (
-              <img 
-                src={product.images.edges[0].node.url} 
-                alt={product.title} 
+              <img
+                src={product.images.edges[0].node.url}
+                alt={product.title}
                 className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-muted-foreground">No image</div>
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                No image
+              </div>
             )}
           </div>
           <div className="p-3 flex flex-col flex-grow">
             <h5 className="font-semibold text-xs line-clamp-2 leading-tight">{product.title}</h5>
             <div className="mt-auto pt-2 text-sm font-bold text-primary">
-              {product.priceRange.minVariantPrice.currencyCode === 'INR' ? '₹' : product.priceRange.minVariantPrice.currencyCode} 
+              {product.priceRange.minVariantPrice.currencyCode === "INR"
+                ? "₹"
+                : product.priceRange.minVariantPrice.currencyCode}
               {parseFloat(product.priceRange.minVariantPrice.amount).toLocaleString()}
             </div>
             <div className="mt-2 bg-primary text-primary-foreground text-[10px] uppercase font-bold text-center py-1.5 rounded-lg w-full">
@@ -519,7 +729,9 @@ function MetaRow({ label, value, mono }: { label: string; value: string; mono?: 
   return (
     <div className="grid grid-cols-[minmax(0,72px)_minmax(0,1fr)] gap-2">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={`truncate font-medium text-foreground ${mono ? "font-mono text-[11px]" : ""}`}>{value}</dd>
+      <dd className={`truncate font-medium text-foreground ${mono ? "font-mono text-[11px]" : ""}`}>
+        {value}
+      </dd>
     </div>
   );
 }
@@ -542,13 +754,18 @@ function SummaryTile({
   return (
     <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 font-semibold ${valueSize === "xl" ? "text-2xl" : "text-base"} ${tone?.cls ?? ""}`}>
+      <p
+        className={`mt-0.5 font-semibold ${valueSize === "xl" ? "text-2xl" : "text-base"} ${tone?.cls ?? ""}`}
+      >
         {value}
         {suffix && <span className="ml-1 text-xs font-normal text-muted-foreground">{suffix}</span>}
       </p>
       {typeof bar === "number" && (
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div className={`h-full rounded-full ${toneBar(bar)}`} style={{ width: `${Math.max(4, bar)}%` }} />
+          <div
+            className={`h-full rounded-full ${toneBar(bar)}`}
+            style={{ width: `${Math.max(4, bar)}%` }}
+          />
         </div>
       )}
     </div>
@@ -610,7 +827,10 @@ const CONCERN_ICONS: { keywords: string[]; icon: LucideIcon }[] = [
   { keywords: ["spot", "pigment", "dark", "hyper", "melasma"], icon: CircleDot },
   { keywords: ["tone", "even", "dull", "glow", "radiance"], icon: Smile },
   { keywords: ["pore", "blackhead", "whitehead", "clog"], icon: Circle },
-  { keywords: ["line", "wrinkle", "age", "aging", "firm", "laxity", "sagging", "renewal"], icon: Waves },
+  {
+    keywords: ["line", "wrinkle", "age", "aging", "firm", "laxity", "sagging", "renewal"],
+    icon: Waves,
+  },
   { keywords: ["acne", "blemish", "pimple", "breakout", "hormonal"], icon: Sparkles },
   { keywords: ["dry", "hydrat", "dehydrat", "parched"], icon: Droplet },
   { keywords: ["oil", "shine", "sebum"], icon: Sparkles },
@@ -628,29 +848,43 @@ function ConcernIcon({ name, className }: { name: string; className?: string }) 
 
 function concernDescription(name: string) {
   const n = name.toLowerCase();
-  if (n.includes("barrier") || n.includes("reactive") || n.includes("stinging")) return "Compromised skin lipid barrier requiring soothing repair";
-  if (n.includes("firm") || n.includes("laxity") || n.includes("sag")) return "Loss of elasticity and natural skin firmness";
-  if (n.includes("melasma") || n.includes("sun spot")) return "Deep hormonal pigmentation or sun-induced dark spots";
-  if (n.includes("dark") || n.includes("spot") || n.includes("pigment")) return "Visible hyperpigmentation and localized dark spots";
-  if (n.includes("post-acne") || n.includes("mark") || n.includes("pie") || n.includes("pih")) return "Blemish marks and post-inflammatory discoloration";
-  if (n.includes("hormonal") || n.includes("breakout")) return "Active hormonal breakouts and inflammatory acne";
-  if (n.includes("acne") || n.includes("blemish") || n.includes("pimple")) return "Active blemishes and comedones";
+  if (n.includes("barrier") || n.includes("reactive") || n.includes("stinging"))
+    return "Compromised skin lipid barrier requiring soothing repair";
+  if (n.includes("firm") || n.includes("laxity") || n.includes("sag"))
+    return "Loss of elasticity and natural skin firmness";
+  if (n.includes("melasma") || n.includes("sun spot"))
+    return "Deep hormonal pigmentation or sun-induced dark spots";
+  if (n.includes("dark") || n.includes("spot") || n.includes("pigment"))
+    return "Visible hyperpigmentation and localized dark spots";
+  if (n.includes("post-acne") || n.includes("mark") || n.includes("pie") || n.includes("pih"))
+    return "Blemish marks and post-inflammatory discoloration";
+  if (n.includes("hormonal") || n.includes("breakout"))
+    return "Active hormonal breakouts and inflammatory acne";
+  if (n.includes("acne") || n.includes("blemish") || n.includes("pimple"))
+    return "Active blemishes and comedones";
   if (n.includes("tan") || n.includes("sun")) return "Sun tan and UV-induced hyperpigmentation";
-  if (n.includes("red") || n.includes("rosacea") || n.includes("erythema")) return "Facial redness and skin irritation";
-  if (n.includes("tone") || n.includes("even") || n.includes("dull") || n.includes("glow")) return "Uneven skin tone and lack of natural radiance";
-  if (n.includes("pore") || n.includes("blackhead") || n.includes("clog")) return "Enlarged, clogged pores and excess congestion";
-  if (n.includes("line") || n.includes("wrinkle") || n.includes("aging")) return "Fine lines and loss of cellular renewal";
-  if (n.includes("dry") || n.includes("dehydrat") || n.includes("parched")) return "Transepidermal water loss and dehydration";
-  if (n.includes("oil") || n.includes("shine") || n.includes("sebum")) return "Excess sebum production and oily shine";
-  if (n.includes("texture") || n.includes("rough")) return "Rough surface texture and dead skin buildup";
+  if (n.includes("red") || n.includes("rosacea") || n.includes("erythema"))
+    return "Facial redness and skin irritation";
+  if (n.includes("tone") || n.includes("even") || n.includes("dull") || n.includes("glow"))
+    return "Uneven skin tone and lack of natural radiance";
+  if (n.includes("pore") || n.includes("blackhead") || n.includes("clog"))
+    return "Enlarged, clogged pores and excess congestion";
+  if (n.includes("line") || n.includes("wrinkle") || n.includes("aging"))
+    return "Fine lines and loss of cellular renewal";
+  if (n.includes("dry") || n.includes("dehydrat") || n.includes("parched"))
+    return "Transepidermal water loss and dehydration";
+  if (n.includes("oil") || n.includes("shine") || n.includes("sebum"))
+    return "Excess sebum production and oily shine";
+  if (n.includes("texture") || n.includes("rough"))
+    return "Rough surface texture and dead skin buildup";
   return "Detected by SKIN POP AI clinical analysis";
 }
 
 function healthSummary(scan: ScanRow, m: ReturnType<typeof normalizeMetrics>): string[] {
   const aiBullets = (scan.recommendations ?? [])
-    .filter(r => r.startsWith("BULLET:"))
-    .map(r => r.replace("BULLET:", "").trim());
-    
+    .filter((r) => r.startsWith("BULLET:"))
+    .map((r) => r.replace("BULLET:", "").trim());
+
   if (aiBullets.length > 0) return aiBullets;
 
   // Fallback for old scans

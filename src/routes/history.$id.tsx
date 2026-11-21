@@ -8,16 +8,14 @@ import { Button } from "@/components/ui/button";
 import { ShareScanSheet } from "@/components/app/share-scan-sheet";
 import { ScanResultsView } from "@/components/app/scan-results-view";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  deleteScan,
-  getScanById,
-  listMyScans,
-  type ScanRow,
-} from "@/lib/skin-analysis.functions";
+import { deleteScan, getScanById, listMyScans, type ScanRow } from "@/lib/skin-analysis.functions";
 
 const viewSchema = z
   .object({
-    tab: z.enum(["overview", "concerns", "analysis", "advice"]).catch("overview").optional(),
+    tab: z
+      .enum(["overview", "projection", "concerns", "analysis", "advice"])
+      .catch("overview")
+      .optional(),
   })
   .catch({});
 
@@ -31,7 +29,10 @@ export const Route = createFileRoute("/history/$id")({
   head: () => ({
     meta: [
       { title: "Scan Details — SKIN POP" },
-      { name: "description", content: "Review a saved AI skin analysis: score, concerns, skin age, and tips." },
+      {
+        name: "description",
+        content: "Review a saved AI skin analysis: score, concerns, skin age, and tips.",
+      },
     ],
   }),
   component: HistoryDetailPage,
@@ -90,7 +91,11 @@ function HistoryDetailPage() {
     return (
       <DeviceFrame
         title="Results Summary"
-        leftSlot={<button className="icon-button" aria-label="Back" onClick={back}><ArrowLeft className="h-4 w-4" /></button>}
+        leftSlot={
+          <button className="icon-button" aria-label="Back" onClick={back}>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        }
       >
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -104,11 +109,19 @@ function HistoryDetailPage() {
     return (
       <DeviceFrame
         title="Results Summary"
-        leftSlot={<button className="icon-button" aria-label="Back" onClick={back}><ArrowLeft className="h-4 w-4" /></button>}
+        leftSlot={
+          <button className="icon-button" aria-label="Back" onClick={back}>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        }
       >
         <div className="space-y-3">
-          <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral">{error}</div>
-          <Button className="w-full" onClick={back}>Back to history</Button>
+          <div className="rounded-2xl border border-coral/40 bg-coral/5 p-4 text-sm text-coral">
+            {error}
+          </div>
+          <Button className="w-full" onClick={back}>
+            Back to history
+          </Button>
         </div>
       </DeviceFrame>
     );
@@ -117,7 +130,11 @@ function HistoryDetailPage() {
   return (
     <DeviceFrame
       title="Results Summary"
-      leftSlot={<button className="icon-button" aria-label="Back" onClick={back}><ArrowLeft className="h-4 w-4" /></button>}
+      leftSlot={
+        <button className="icon-button" aria-label="Back" onClick={back}>
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+      }
       rightSlot={
         <div className="flex items-center gap-1">
           <button className="icon-button" aria-label="Share" onClick={() => setShareOpen(true)}>
@@ -137,7 +154,9 @@ function HistoryDetailPage() {
             size="lg"
             variant="outline"
             className="h-12 w-full rounded-2xl"
-            onClick={() => navigate({ to: "/history/compare", search: { a: row.id, b: previous.id } })}
+            onClick={() =>
+              navigate({ to: "/history/compare", search: { a: row.id, b: previous.id } })
+            }
           >
             Compare with previous scan
           </Button>
