@@ -158,7 +158,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured");
 
-  const modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.5-flash"];
+  const modelsToTry = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash"];
   let lastError: Error = new Error("AI request failed");
   
   // Extract mime type and base64 data from the data URL
@@ -182,7 +182,7 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
             role: "user",
             parts: [
               {
-                text: "Analyze this selfie and respond with JSON only. Be strictly consistent: for the same image always return identical numbers. Evaluate methodically feature-by-feature using only visible pixels. Provide highly personalized product and active ingredient recommendations based specifically on the unique skin concerns detected in this exact image."
+                text: "Analyze this selfie and respond with JSON only. Be strictly deterministic: for the same image and visible skin features, always return identical numbers, metrics, and assessments. Evaluate methodically feature-by-feature using only visible pixels. Provide highly personalized product and active ingredient recommendations based specifically on the unique skin concerns detected in this exact image."
               },
               {
                 inline_data: {
@@ -195,7 +195,8 @@ async function callVisionModel(imageDataUrl: string): Promise<{ result: SkinAnal
         ],
         generationConfig: {
           responseMimeType: "application/json",
-          temperature: 0.4,
+          temperature: 0.0,
+          seed: 42,
         }
       }),
       signal: AbortSignal.timeout(15000),
@@ -321,6 +322,9 @@ function hammingDistanceHex(a: string, b: string): number {
   return distance;
 }
 
+// Fast in-memory perceptual & SHA-256 cache to guarantee 100% score consistency for repeated uploads
+const MEMORY_SCAN_HASH_CACHE = new Map<string, { scan: ScanRow; fingerprint: string | null }>();
+
 export const analyzeSkinPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => AnalyzeInput.parse(input))
@@ -329,7 +333,19 @@ export const analyzeSkinPhoto = createServerFn({ method: "POST" })
     const image_hash = await sha256Hex(data.imageDataUrl);
     const face_fingerprint_hash = data.faceFingerprint?.toLowerCase() ?? null;
 
-    // Return cached scan for identical image so the same photo always yields the same result
+    // 1. Fast in-memory perceptual cache check (instant 0ms response)
+    const memDirect = MEMORY_SCAN_HASH_CACHE.get(image_hash);
+    if (memDirect) return memDirect.scan;
+
+    if (face_fingerprint_hash) {
+      for (const entry of MEMORY_SCAN_HASH_CACHE.values()) {
+        if (entry.fingerprint && hammingDistanceHex(face_fingerprint_hash, entry.fingerprint) <= 1) {
+          return entry.scan;
+        }
+      }
+    }
+
+    // 2. Return cached scan from database for identical image so the same photo always yields the exact same result
     const cached = await client
       .from("skin_scans")
       .select("*")
@@ -338,10 +354,12 @@ export const analyzeSkinPhoto = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (cached.error) throw new Error(cached.error.message);
-    if (cached.data) return cached.data as ScanRow;
+    if (!cached.error && cached.data) {
+      MEMORY_SCAN_HASH_CACHE.set(image_hash, { scan: cached.data as ScanRow, fingerprint: face_fingerprint_hash });
+      return cached.data as ScanRow;
+    }
 
-    // Return the closest recent scan for the same face, so tiny capture/light differences don't change results.
+    // 3. Return cached scan for the exact same photo (allowing at most 1-bit JPEG compression quantization difference)
     if (face_fingerprint_hash) {
       const similar = await client
         .from("skin_scans")
@@ -350,16 +368,20 @@ export const analyzeSkinPhoto = createServerFn({ method: "POST" })
         .not("face_fingerprint_hash", "is", null)
         .order("created_at", { ascending: false })
         .limit(80);
-      if (similar.error) throw new Error(similar.error.message);
+      if (!similar.error && similar.data) {
+        const match = ((similar.data ?? []) as Array<ScanRow & { face_fingerprint_hash?: string | null }>)
+          .map((row) => ({ row, distance: hammingDistanceHex(face_fingerprint_hash, row.face_fingerprint_hash ?? "") }))
+          .filter((item) => item.distance <= 1)
+          .sort((a, b) => a.distance - b.distance)[0]?.row;
 
-      const match = ((similar.data ?? []) as Array<ScanRow & { face_fingerprint_hash?: string | null }>)
-        .map((row) => ({ row, distance: hammingDistanceHex(face_fingerprint_hash, row.face_fingerprint_hash ?? "") }))
-        .filter((item) => item.distance <= 10)
-        .sort((a, b) => a.distance - b.distance)[0]?.row;
-
-      if (match) return match as ScanRow;
+        if (match) {
+          MEMORY_SCAN_HASH_CACHE.set(image_hash, { scan: match as ScanRow, fingerprint: face_fingerprint_hash });
+          return match as ScanRow;
+        }
+      }
     }
 
+    // 4. Run AI vision model in deterministic mode (temperature: 0.0, seed: 42)
     const { result, model } = await callVisionModel(data.imageDataUrl);
     const scan_type = inferScanType();
 
@@ -383,7 +405,9 @@ export const analyzeSkinPhoto = createServerFn({ method: "POST" })
       .single();
 
     if (error) throw new Error(error.message);
-    return row as ScanRow;
+    const savedRow = row as ScanRow;
+    MEMORY_SCAN_HASH_CACHE.set(image_hash, { scan: savedRow, fingerprint: face_fingerprint_hash });
+    return savedRow;
   });
 
 export const getLatestScan = createServerFn({ method: "GET" })
