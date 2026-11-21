@@ -11,6 +11,7 @@ import {
   CircleDot,
   Smile,
   Shield,
+  ShieldAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ScoreArc } from "./score-arc";
@@ -605,15 +606,17 @@ function cap(s: string) {
 }
 
 const CONCERN_ICONS: { keywords: string[]; icon: LucideIcon }[] = [
-  { keywords: ["spot", "pigment", "dark", "hyper"], icon: CircleDot },
-  { keywords: ["tone", "even", "dull"], icon: Smile },
-  { keywords: ["pore"], icon: Circle },
-  { keywords: ["line", "wrinkle", "age"], icon: Waves },
-  { keywords: ["acne", "blemish", "pimple"], icon: Sparkles },
-  { keywords: ["dry", "hydrat"], icon: Droplet },
-  { keywords: ["oil", "shine"], icon: Sparkles },
-  { keywords: ["red", "sensitiv"], icon: Shield },
-  { keywords: ["texture"], icon: Waves },
+  { keywords: ["barrier", "stinging", "reactive"], icon: ShieldAlert },
+  { keywords: ["spot", "pigment", "dark", "hyper", "melasma"], icon: CircleDot },
+  { keywords: ["tone", "even", "dull", "glow", "radiance"], icon: Smile },
+  { keywords: ["pore", "blackhead", "whitehead", "clog"], icon: Circle },
+  { keywords: ["line", "wrinkle", "age", "aging", "firm", "laxity", "sagging", "renewal"], icon: Waves },
+  { keywords: ["acne", "blemish", "pimple", "breakout", "hormonal"], icon: Sparkles },
+  { keywords: ["dry", "hydrat", "dehydrat", "parched"], icon: Droplet },
+  { keywords: ["oil", "shine", "sebum"], icon: Sparkles },
+  { keywords: ["red", "sensitiv", "inflam", "rosacea", "erythema"], icon: Shield },
+  { keywords: ["texture", "rough", "flaky"], icon: Waves },
+  { keywords: ["tan", "sun", "burn"], icon: Sun },
 ];
 
 function ConcernIcon({ name, className }: { name: string; className?: string }) {
@@ -625,15 +628,22 @@ function ConcernIcon({ name, className }: { name: string; className?: string }) 
 
 function concernDescription(name: string) {
   const n = name.toLowerCase();
-  if (n.includes("dark") || n.includes("spot") || n.includes("pigment")) return "Visible pigmentation and dark spots";
-  if (n.includes("tone") || n.includes("even")) return "Uneven skin tone and dullness";
-  if (n.includes("pore")) return "Enlarged pores on nose and cheeks";
-  if (n.includes("line") || n.includes("wrinkle")) return "Early signs of fine lines";
-  if (n.includes("acne") || n.includes("blemish")) return "Active blemishes and breakouts";
-  if (n.includes("dry")) return "Dehydration and dry patches";
-  if (n.includes("oil") || n.includes("shine")) return "Excess oil and shine";
-  if (n.includes("red")) return "Redness and irritation";
-  return "Detected by AI skin analysis";
+  if (n.includes("barrier") || n.includes("reactive") || n.includes("stinging")) return "Compromised skin lipid barrier requiring soothing repair";
+  if (n.includes("firm") || n.includes("laxity") || n.includes("sag")) return "Loss of elasticity and natural skin firmness";
+  if (n.includes("melasma") || n.includes("sun spot")) return "Deep hormonal pigmentation or sun-induced dark spots";
+  if (n.includes("dark") || n.includes("spot") || n.includes("pigment")) return "Visible hyperpigmentation and localized dark spots";
+  if (n.includes("post-acne") || n.includes("mark") || n.includes("pie") || n.includes("pih")) return "Blemish marks and post-inflammatory discoloration";
+  if (n.includes("hormonal") || n.includes("breakout")) return "Active hormonal breakouts and inflammatory acne";
+  if (n.includes("acne") || n.includes("blemish") || n.includes("pimple")) return "Active blemishes and comedones";
+  if (n.includes("tan") || n.includes("sun")) return "Sun tan and UV-induced hyperpigmentation";
+  if (n.includes("red") || n.includes("rosacea") || n.includes("erythema")) return "Facial redness and skin irritation";
+  if (n.includes("tone") || n.includes("even") || n.includes("dull") || n.includes("glow")) return "Uneven skin tone and lack of natural radiance";
+  if (n.includes("pore") || n.includes("blackhead") || n.includes("clog")) return "Enlarged, clogged pores and excess congestion";
+  if (n.includes("line") || n.includes("wrinkle") || n.includes("aging")) return "Fine lines and loss of cellular renewal";
+  if (n.includes("dry") || n.includes("dehydrat") || n.includes("parched")) return "Transepidermal water loss and dehydration";
+  if (n.includes("oil") || n.includes("shine") || n.includes("sebum")) return "Excess sebum production and oily shine";
+  if (n.includes("texture") || n.includes("rough")) return "Rough surface texture and dead skin buildup";
+  return "Detected by SKIN POP AI clinical analysis";
 }
 
 function healthSummary(scan: ScanRow, m: ReturnType<typeof normalizeMetrics>): string[] {
@@ -665,19 +675,32 @@ const DEFAULT_TIPS = [
 function buildRoutines(scan: ScanRow): { morning: string[]; evening: string[] } {
   const concerns = (scan.concerns ?? []).map((c) => c.name.toLowerCase()).join(" ");
   const has = (kw: string) => concerns.includes(kw);
-  const morning = ["Gentle Cleanser"];
-  if (has("dark") || has("spot") || has("pigment") || has("dull") || has("tone")) morning.push("Vitamin C Serum");
-  if (has("dry") || has("dehyd")) morning.push("Hydrating Serum");
-  morning.push("Moisturizer");
-  morning.push("Sunscreen SPF 50+");
+  const morning = ["2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml"];
+  if (has("barrier") || has("sensit") || has("dehyd")) {
+    morning.push("Skin Barrier Repair & Hydration Serum - 30ml");
+  } else if (has("dark") || has("spot") || has("melasma")) {
+    morning.push("Dark Spot & Uneven Tone Face Serum - 30ml");
+  } else if (has("tone") || has("mark") || has("pih")) {
+    morning.push("Pigmentation & Uneven Tone Face Serum - 30ml");
+  } else {
+    morning.push("Vitamin C Radiance Repair Face Serum – 30 ml");
+  }
+  morning.push("Barrier Repair Moisturizer – 50 g");
+  morning.push("SPF 60 Gel Sunscreen");
 
-  const evening = ["Gentle Cleanser"];
-  if (has("pore") || has("acne") || has("blemish")) evening.push("Niacinamide Serum");
-  if (has("line") || has("wrinkle") || has("age")) evening.push("Retinol Serum (2–3x/week)");
-  if (has("dry")) evening.push("Hydrating Serum");
-  evening.push("Night Moisturizer");
-  if (has("dark") || has("under") || has("eye")) evening.push("Eye Cream (Optional)");
-  else evening.push("Eye Cream (Optional)");
+  const evening = ["2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml"];
+  if (has("acne") || has("red") || has("rosacea") || has("hormonal")) {
+    evening.push("Acne & Redness Control Face Serum - 30ml");
+  } else if (has("firm") || has("laxity") || has("sag")) {
+    evening.push("Firming & Anti-Aging Face Serum - 30ml");
+  } else if (has("line") || has("wrinkle") || has("aging")) {
+    evening.push("Anti-Aging & Skin Renewal Face Serum - 30ml");
+  } else if (has("barrier") || has("dry")) {
+    evening.push("Skin Barrier Repair & Hydration Serum - 30ml");
+  } else {
+    evening.push("Anti-Aging & Skin Renewal Face Serum - 30ml");
+  }
+  evening.push("Barrier Repair Moisturizer – 50 g");
 
   return { morning: dedupe(morning), evening: dedupe(evening) };
 }

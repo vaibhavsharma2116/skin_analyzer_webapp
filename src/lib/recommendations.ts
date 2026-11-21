@@ -19,18 +19,16 @@ export type RoutinePreset = {
 };
 
 const BASE_AM: RoutineStep[] = [
-  { id: "am-cleanse", title: "Gentle Cleanser", emoji: "🧼", hint: "Wash face with lukewarm water" },
-  { id: "am-tone", title: "Hydrating Toner", emoji: "💧", hint: "Balance skin pH" },
-  { id: "am-vitc", title: "Vitamin C Serum", emoji: "🍊", hint: "Antioxidant glow boost" },
-  { id: "am-moist", title: "Moisturizer", emoji: "🧴", hint: "Lock in hydration" },
-  { id: "am-spf", title: "Sunscreen SPF 50+", emoji: "☀️", hint: "Broad spectrum protection" },
+  { id: "am-cleanse", title: "2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml", emoji: "🫧", hint: "Gently wash face to clear pores & excess sebum" },
+  { id: "am-vitc", title: "Vitamin C Radiance Repair Face Serum – 30 ml", emoji: "🍊", hint: "Boost antioxidant protection and morning radiance" },
+  { id: "am-moist", title: "Barrier Repair Moisturizer – 50 g", emoji: "🧴", hint: "Seal in hydration and fortify skin lipid barrier" },
+  { id: "am-spf", title: "SPF 60 Gel Sunscreen", emoji: "☀️", hint: "High broad-spectrum UVA/UVB defense" },
 ];
 
 const BASE_PM: RoutineStep[] = [
-  { id: "pm-cleanse", title: "Gentle Cleanser", emoji: "🧼", hint: "Remove makeup & sunscreen" },
-  { id: "pm-niaci", title: "Niacinamide Serum", emoji: "✨", hint: "Pores & oil control" },
-  { id: "pm-moist", title: "Night Moisturizer", emoji: "🌙", hint: "Repair barrier overnight" },
-  { id: "pm-eye", title: "Eye Cream (optional)", emoji: "👁️", hint: "Depuff & hydrate" },
+  { id: "pm-cleanse", title: "2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml", emoji: "🧼", hint: "Deep cleanse environmental impurities & sunscreen" },
+  { id: "pm-renew", title: "Anti-Aging & Skin Renewal Face Serum - 30ml", emoji: "🌙", hint: "Promote cell renewal and smooth fine lines overnight" },
+  { id: "pm-moist", title: "Barrier Repair Moisturizer – 50 g", emoji: "🌜", hint: "Restore lipid barrier and soothe skin overnight" },
 ];
 
 export function recommendationsFor(scan: ScanRow | null | undefined): RoutinePreset {

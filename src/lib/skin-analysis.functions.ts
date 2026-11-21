@@ -62,70 +62,83 @@ Return ONLY valid JSON matching exactly this shape (no markdown, no prose):
     "hydration": 0-100, "oil_balance": 0-100, "texture": 0-100, "pores": 0-100, "evenness": 0-100, "elasticity": 0-100
   },
   "concerns": [ 
-    // Identify ALL applicable concerns from this master list: 
-    // Acne (Pimples), Acne Marks / Post-acne Spots, Dark Spots / Hyperpigmentation, Melasma, Dark Circles, 
-    // Eye Bags / Puffy Eyes, Fine Lines, Wrinkles, Open / Enlarged Pores, Blackheads, Whiteheads, 
-    // Redness, Uneven Skin Tone, Dull Skin, Dehydrated Skin, Sun Damage / Tanning, Freckles, Texture / Rough Skin, Facial Asymmetry.
-    { "name": "Dark Circles", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, 
+    // Identify ALL applicable concerns from this comprehensive clinical master list: 
+    // - Acne & Blemishes (Pimples, Papules, Pustules)
+    // - Hormonal Acne & Breakouts
+    // - Post-Acne Marks (PIH - Dark/Brown Blemish Marks)
+    // - Post-Inflammatory Erythema (PIE - Red Blemish Marks)
+    // - Dark Spots & Hyperpigmentation
+    // - Melasma & Sun Spots
+    // - Facial Redness & Rosacea
+    // - Sensitive & Inflamed Skin
+    // - Skin Barrier Damage & Stinging Skin
+    // - Dehydrated & Parched Skin
+    // - Loss of Firmness & Skin Laxity
+    // - Fine Lines & Crow's Feet
+    // - Deep Expression Wrinkles
+    // - Uneven Skin Tone & Patchiness
+    // - Dull Skin & Lack of Radiance
+    // - Sun Tan & UV Damage
+    // - Open & Enlarged Pores
+    // - Clogged Pores & Congestion
+    // - Blackheads & Whiteheads
+    // - Excess Sebum & Oily Shine
+    // - Rough Skin Texture & Dead Skin Buildup
+    // - Dark Circles & Under-Eye Puffiness
+    { "name": "Dark Spots & Hyperpigmentation", "severity": "low"|"moderate"|"high", "score": 0-100 severity intensity }, 
     ... include ALL detected concerns (0 to 20 items) 
   ],
   "recommendations": [
     // IMPORTANT: The recommendations array MUST contain items with specific prefixes so the app can parse them.
     // Format: "PREFIX: Text" or "PREFIX: Title|Hint|Emoji"
     
-    // YOU MUST ONLY RECOMMEND PRODUCTS FROM THIS EXACT CATALOG, MATCHING THE PRIMARY CONCERN:
-    // [CLEANSERS]
-    // - Gentle Hydrating Cleanser (For Dry, Sensitive, Barrier Repair)
-    // - Salicylic Cleanser (For Acne, Oily Skin, Blackheads)
-    // - Brightening Cleanser (For Dullness, Pigmentation)
-    // [SERUMS]
-    // - 10% Niacinamide Serum (For Oil, Pores, Acne Marks)
-    // - Vitamin C Serum (For Brightening)
-    // - Alpha Arbutin Serum (For Pigmentation)
-    // - Tranexamic Acid Serum (For Melasma)
-    // - Hyaluronic Acid Serum (For Hydration)
-    // - Retinal Serum (For Anti-aging)
-    // - Azelaic Acid Serum (For Acne, Redness)
-    // - Barrier Repair Serum (For Sensitive Skin)
-    // - Peptide Serum (For Firmness)
-    // - Caffeine Eye Serum (For Dark Circles)
-    // [MOISTURIZERS]
-    // - Gel Moisturizer (For Oily, Acne-prone)
-    // - Barrier Cream (For Dry, Sensitive, Damaged Barrier)
-    // - Oil-Free Moisturizer (For Extremely Oily)
-    // - Overnight Repair Cream (For Night routine, Anti-aging)
-    // [SUNSCREENS]
-    // - SPF50 Gel Sunscreen (For normal to dry)
-    // - Matte Sunscreen (For Oily, Acne-prone)
-    // - Hydrating Sunscreen (For Dry, Sensitive)
+    // YOU MUST ONLY RECOMMEND PRODUCTS FROM THIS EXACT SKNPOP BRAND CATALOG (Available on sknpop.in):
+    // [CLEANSER]
+    // - 2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml (For Clogged Pores, Sebum, Blackheads, Active Breakouts)
+    // [SERUMS - Match specifically to user's primary concerns and skin goals]
+    // - Acne & Redness Control Face Serum - 30ml (Azelaic Acid - Best for: Hormonal Acne, Active Breakouts, Facial Redness, Rosacea, Sensitive Inflamed Skin, Red Marks/PIE)
+    // - Skin Barrier Repair & Hydration Serum - 30ml (Ceramides + Cholesterol - Best for: Skin Barrier Damage, Dehydration, Stinging/Reactive Skin, Dry Patches)
+    // - Dark Spot & Uneven Tone Face Serum - 30ml (Licorice + Tranexamic Acid - Best for: Stubborn Dark Spots, Melasma, Deep Hyperpigmentation, Sun Spots)
+    // - Pigmentation & Uneven Tone Face Serum - 30ml (Alpha Arbutin + Niacinamide - Best for: Uneven Skin Tone, Post-Acne Dark Marks/PIH, Blemish Scars, Enlarged Pores)
+    // - Firming & Anti-Aging Face Serum - 30ml (Copper Peptides - Best for: Loss of Firmness, Skin Laxity, Sagging Contours, Elasticity Loss)
+    // - Anti-Aging & Skin Renewal Face Serum - 30ml (Retinal + Peptides - Best for: Fine Lines, Deep Wrinkles, Mature Skin, Rough Texture, Skin Renewal)
+    // - Vitamin C Radiance Repair Face Serum – 30 ml (Vitamin C + Ferulic - Best for: Dull Skin, Lack of Radiance, Antioxidant Glow, Early Photoaging)
+    // [MOISTURIZER]
+    // - Barrier Repair Moisturizer – 50 g (Essential for all skin types to lock in active serums and reinforce lipid barrier)
+    // [SUNSCREEN]
+    // - SPF 60 Gel Sunscreen (Essential morning daily broad-spectrum UVA/UVB defense against sun damage, tan, and dark spots)
+    // [WEEKLY EXFOLIATION / RESET]
+    // - Alpha Glow Polish Scrub – 50 ml (For dead skin buildup, smooth texture buffing 1-2x weekly)
+    // - Glow Reset De-Tan Soap (For sun tan removal & total complexion brightening)
     
     // Provide exactly 3 to 4 MORNING routine steps:
-    // Format: "MORNING: [Exact Product Name from Catalog] | [Short Reason] | [Emoji]"
-    "MORNING: Salicylic Cleanser | To clear excess oil and acne | 🫧",
-    "MORNING: 10% Niacinamide Serum | To control sebum and refine pores | 💧",
-    "MORNING: Gel Moisturizer | Lightweight hydration without clogging | 🧴",
-    "MORNING: Matte Sunscreen | To protect and control shine | ☀️",
+    // Format: "MORNING: [Exact Product Name from SKNPOP Catalog] | [Personalized Reason] | [Emoji]"
+    "MORNING: 2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml | Gently clears excess oil and clarifies pores | 🫧",
+    "MORNING: Vitamin C Radiance Repair Face Serum – 30 ml | Brightens dullness and delivers antioxidant daily protection | 🍊",
+    "MORNING: Barrier Repair Moisturizer – 50 g | Locks in hydration and strengthens skin lipid barrier | 🧴",
+    "MORNING: SPF 60 Gel Sunscreen | High SPF broad-spectrum UV protection against tanning and aging | ☀️",
     
-    // Provide exactly 3 to 4 EVENING routine steps using the SAME CATALOG:
-    // Format: "EVENING: [Exact Product Name from Catalog] | [Short Reason] | [Emoji]"
-    "EVENING: Salicylic Cleanser | To deep clean pores after the day | 🧼",
-    "EVENING: Retinal Serum | To target fine lines and texture | 🌙",
-    "EVENING: Overnight Repair Cream | To restore barrier while you sleep | 🌜",
+    // Provide exactly 3 to 4 EVENING routine steps using the SAME SKNPOP CATALOG:
+    // Format: "EVENING: [Exact Product Name from SKNPOP Catalog] | [Personalized Reason] | [Emoji]"
+    "EVENING: 2% Salicylic Acid + Mandelic Acid Clear Skin Foaming Facewash – 100 ml | Deeply removes daily pollution, sunscreen, and grime | 🧼",
+    "EVENING: Anti-Aging & Skin Renewal Face Serum - 30ml | Accelerates cellular renewal and visibly softens fine lines | 🌙",
+    "EVENING: Barrier Repair Moisturizer – 50 g | Rich restorative care that repairs skin overnight | 🌜",
     
-    // Provide 2 to 4 ingredients to USE:
-    "USE: Niacinamide",
-    "USE: Hyaluronic Acid",
+    // Provide 2 to 4 key active ingredients to USE:
+    "USE: Azelaic Acid",
+    "USE: Ceramides",
     
-    // Provide 1 to 3 ingredients to AVOID:
-    "AVOID: Heavy coconut oil",
-    "AVOID: Harsh physical scrubs",
+    // Provide 1 to 3 ingredients or habits to AVOID:
+    "AVOID: Harsh physical scrubs on active breakouts",
+    "AVOID: Fragranced drying alcohol toners",
     
     // Provide 2 to 4 LIFESTYLE tips based on their scan:
-    "LIFESTYLE: Drink at least 8 glasses of water to boost hydration.",
+    "LIFESTYLE: Drink at least 2.5-3 liters of water daily to maintain cellular hydration.",
+    "LIFESTYLE: Wash your pillowcases twice weekly to prevent bacterial transfer.",
     
-    // Provide 2 to 4 BULLET points summarizing their skin health:
-    "BULLET: Good hydration levels but visible pores on the nose.",
-    "BULLET: Minor pigmentation issues observed on the cheeks."
+    // Provide 2 to 4 clinical BULLET points summarizing their skin health:
+    "BULLET: Healthy skin barrier observed with good baseline hydration.",
+    "BULLET: Localized hyperpigmentation on the upper cheeks requires targeted tranexamic or arbutin care."
   ]
 }
 
