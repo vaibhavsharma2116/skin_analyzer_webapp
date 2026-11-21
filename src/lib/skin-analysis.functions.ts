@@ -262,6 +262,29 @@ export type ScanRow = {
   created_at: string;
 };
 
+const LATEST_SCAN_CACHE_KEY = "skinpop:lastScanResult";
+
+export function getCachedLatestScan(): ScanRow | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(LATEST_SCAN_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as ScanRow) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedLatestScan(scan: ScanRow | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (scan) {
+      sessionStorage.setItem(LATEST_SCAN_CACHE_KEY, JSON.stringify(scan));
+    } else {
+      sessionStorage.removeItem(LATEST_SCAN_CACHE_KEY);
+    }
+  } catch {}
+}
+
 type AnyClient = {
   from: (t: string) => any;
   rpc?: (...args: unknown[]) => unknown;

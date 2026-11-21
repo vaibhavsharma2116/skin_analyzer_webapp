@@ -5,7 +5,7 @@ import { ArrowLeft, ShoppingBag, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
+import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { getShopifyRecommendations } from "@/lib/shopify.functions";
 import { useQuery } from "@tanstack/react-query";
 
@@ -27,12 +27,19 @@ export const Route = createFileRoute("/recommendations/products")({
 function RecommendedProducts() {
   const navigate = useNavigate();
   const fetchLatest = useServerFn(getLatestScan);
-  const [scan, setScan] = useState<ScanRow | null>(null);
+  const cached = getCachedLatestScan();
+  const [scan, setScan] = useState<ScanRow | null>(cached);
 
   useEffect(() => {
     let active = true;
     fetchLatest()
-      .then((row) => { if (active) setScan((row as ScanRow | null) ?? null); })
+      .then((row) => {
+        if (active) {
+          const s = (row as ScanRow | null) ?? null;
+          setScan(s);
+          if (s) setCachedLatestScan(s);
+        }
+      })
       .catch(() => {});
     return () => { active = false; };
   }, [fetchLatest]);

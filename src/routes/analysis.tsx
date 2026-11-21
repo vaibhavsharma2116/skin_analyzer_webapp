@@ -1,5 +1,6 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Camera, Loader2, RefreshCw, Share2, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
@@ -7,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ShareScanSheet } from "@/components/app/share-scan-sheet";
 import { ScanResultsView } from "@/components/app/scan-results-view";
 import { supabase } from "@/integrations/supabase/client";
-import { analyzeSkinPhoto, type ScanRow, type SkinAnalysisResult } from "@/lib/skin-analysis.functions";
+import { analyzeSkinPhoto, setCachedLatestScan, type ScanRow, type SkinAnalysisResult } from "@/lib/skin-analysis.functions";
+import { getShopifyRecommendations } from "@/lib/shopify.functions";
 
 
 export const Route = createFileRoute("/analysis")({
@@ -44,6 +46,7 @@ const SCAN_FINGERPRINT_STORAGE_KEY = "skinpop:lastScanFingerprint";
 
 function AnalysisPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const analyze = useServerFn(analyzeSkinPhoto);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +85,27 @@ function AnalysisPage() {
         clearInterval(timer);
         setResult(row as Result);
         setStatus("ready");
+
+        // Immediately cache the scan result so recommendations load in 0ms
+        try {
+          const scanRow = row as unknown as ScanRow;
+          setCachedLatestScan(scanRow);
+
+          // Warm up Shopify product recommendations in the background
+          const concerns = scanRow.concerns?.map((c) => c.name) || ["skincare"];
+          queryClient.prefetchQuery({
+            queryKey: ["shopify-recommendations-full", concerns],
+            queryFn: () => getShopifyRecommendations({ data: { concerns } }),
+            staleTime: 1000 * 60 * 5,
+          });
+          queryClient.prefetchQuery({
+            queryKey: ["shopify-all-products"],
+            queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
+            staleTime: 1000 * 60 * 5,
+          });
+        } catch {
+          // ignore cache errors
+        }
         
         // Push Notification logic for "push_scan"
         try {
@@ -207,8 +231,10 @@ function AnalysisPage() {
       <ScanResultsView scan={scan} />
 
       <div className="mt-5 space-y-2">
-        <Button size="lg" className="h-12 w-full rounded-2xl" onClick={() => navigate({ to: "/recommendations" })}>
-          <Sparkles className="mr-2 h-4 w-4" /> View AI Recommendations
+        <Button asChild size="lg" className="h-12 w-full rounded-2xl">
+          <Link to="/recommendations">
+            <Sparkles className="mr-2 h-4 w-4" /> View AI Recommendations
+          </Link>
         </Button>
         <Button variant="outline" size="lg" className="h-12 w-full rounded-2xl" onClick={() => setShareOpen(true)}>
           <Share2 className="mr-2 h-4 w-4" /> Share results

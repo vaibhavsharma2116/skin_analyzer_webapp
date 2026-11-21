@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { DashboardHome } from "@/components/app/dashboard-home";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/profiles.functions";
-import { getLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
+import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 
 export const Route = createFileRoute("/dashboard")({
   ssr: false,
@@ -37,7 +37,7 @@ function DashboardPage() {
   const fetchProfile = useServerFn(getMyProfile);
   const fetchLatest = useServerFn(getLatestScan);
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
-  const [latest, setLatest] = useState<ScanRow | null>(null);
+  const [latest, setLatest] = useState<ScanRow | null>(getCachedLatestScan());
 
   useEffect(() => {
     let active = true;
@@ -52,7 +52,11 @@ function DashboardPage() {
 
     void fetchLatest()
       .then((row) => {
-        if (active) setLatest((row as ScanRow | null) ?? null);
+        if (active) {
+          const s = (row as ScanRow | null) ?? null;
+          setLatest(s);
+          if (s) setCachedLatestScan(s);
+        }
       })
       .catch(() => {
         /* ignore */

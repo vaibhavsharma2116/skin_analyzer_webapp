@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Sun, Moon, Leaf, Ban, ChevronRight, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
+import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor, scanFocus } from "@/lib/recommendations";
 
 export const Route = createFileRoute("/recommendations/")({
@@ -26,13 +26,20 @@ export const Route = createFileRoute("/recommendations/")({
 function RecommendationsIndex() {
   const navigate = useNavigate();
   const fetchLatest = useServerFn(getLatestScan);
-  const [scan, setScan] = useState<ScanRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = getCachedLatestScan();
+  const [scan, setScan] = useState<ScanRow | null>(cached);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
     let active = true;
     fetchLatest()
-      .then((row) => { if (active) setScan((row as ScanRow | null) ?? null); })
+      .then((row) => {
+        if (active) {
+          const s = (row as ScanRow | null) ?? null;
+          setScan(s);
+          if (s) setCachedLatestScan(s);
+        }
+      })
       .catch(() => {})
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -86,11 +93,15 @@ function RecommendationsIndex() {
       </div>
 
       <div className="mt-6 space-y-2">
-        <Button className="h-12 w-full rounded-2xl" onClick={() => navigate({ to: "/recommendations/products" })}>
-          Explore Products <ChevronRight className="ml-1 h-4 w-4" />
+        <Button asChild className="h-12 w-full rounded-2xl">
+          <Link to="/recommendations/products">
+            Explore Products <ChevronRight className="ml-1 h-4 w-4" />
+          </Link>
         </Button>
-        <Button variant="outline" className="h-12 w-full rounded-2xl" onClick={() => navigate({ to: "/recommendations/routine" })}>
-          Build My Routine
+        <Button asChild variant="outline" className="h-12 w-full rounded-2xl">
+          <Link to="/recommendations/routine">
+            Build My Routine
+          </Link>
         </Button>
       </div>
     </DeviceFrame>

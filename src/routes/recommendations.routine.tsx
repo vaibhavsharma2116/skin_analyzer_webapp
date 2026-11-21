@@ -5,7 +5,7 @@ import { ArrowLeft, Clock, Moon, Sun } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
+import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor, type RoutineStep } from "@/lib/recommendations";
 import { useQuery } from "@tanstack/react-query";
 import { getShopifyRecommendations, matchProductToStep, type ShopifyProduct } from "@/lib/shopify.functions";
@@ -42,15 +42,18 @@ export const Route = createFileRoute("/recommendations/routine")({
 function RoutineBuilder() {
   const navigate = useNavigate();
   const fetchLatest = useServerFn(getLatestScan);
-  const [scan, setScan] = useState<ScanRow | null>(null);
-  const [loadingScan, setLoadingScan] = useState(true);
+  const cached = getCachedLatestScan();
+  const [scan, setScan] = useState<ScanRow | null>(cached);
+  const [loadingScan, setLoadingScan] = useState(!cached);
 
   useEffect(() => {
     let active = true;
     fetchLatest()
       .then((r) => {
         if (active) {
-          setScan((r as ScanRow | null) ?? null);
+          const s = (r as ScanRow | null) ?? null;
+          setScan(s);
+          if (s) setCachedLatestScan(s);
         }
       })
       .catch(() => {})
