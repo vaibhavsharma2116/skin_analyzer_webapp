@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor, type RoutineStep } from "@/lib/recommendations";
 import { useQuery } from "@tanstack/react-query";
-import { getShopifyRecommendations, matchProductToStep, type ShopifyProduct } from "@/lib/shopify.functions";
+import { getShopifyRecommendations, getAllShopifyProducts, matchProductToStep, type ShopifyProduct } from "@/lib/shopify.functions";
 
 const KEY = "skinpop.builder.v1";
 
@@ -66,7 +66,7 @@ function RoutineBuilder() {
   const preset = useMemo(() => recommendationsFor(scan), [scan]);
   const { data: allProducts } = useQuery({
     queryKey: ["shopify-all-products"],
-    queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
+    queryFn: () => getAllShopifyProducts(),
     staleTime: 1000 * 60 * 5,
   });
 

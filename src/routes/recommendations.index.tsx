@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Sun, Moon, Leaf, Ban, ChevronRight, Sparkles } from "lucide-react";
 import { DeviceFrame } from "@/components/app/device-frame";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getLatestScan, getCachedLatestScan, setCachedLatestScan, type ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor, scanFocus } from "@/lib/recommendations";
+import { getAllShopifyProducts, matchProductToStep, type ShopifyProduct } from "@/lib/shopify.functions";
 
 export const Route = createFileRoute("/recommendations/")({
   ssr: false,
@@ -48,6 +50,12 @@ function RecommendationsIndex() {
   const preset = recommendationsFor(scan);
   const focus = scanFocus(scan);
 
+  const { data: allProducts } = useQuery({
+    queryKey: ["shopify-all-products"],
+    queryFn: () => getAllShopifyProducts(),
+    staleTime: 1000 * 60 * 5,
+  });
+
   return (
     <DeviceFrame
       title="AI Recommendations"
@@ -72,8 +80,8 @@ function RecommendationsIndex() {
         </p>
       </div>
 
-      <RoutineCard title="Morning Routine" icon={<Sun className="h-4 w-4" />} steps={preset.am.map((s, i) => ({ n: i + 1, ...s }))} />
-      <RoutineCard title="Evening Routine" icon={<Moon className="h-4 w-4" />} steps={preset.pm.map((s, i) => ({ n: i + 1, ...s }))} />
+      <RoutineCard title="Morning Routine" icon={<Sun className="h-4 w-4" />} steps={preset.am.map((s, i) => ({ n: i + 1, ...s }))} allProducts={allProducts} />
+      <RoutineCard title="Evening Routine" icon={<Moon className="h-4 w-4" />} steps={preset.pm.map((s, i) => ({ n: i + 1, ...s }))} allProducts={allProducts} />
 
       <div className="mt-5 grid grid-cols-2 gap-3">
         <IngredientCard title="Ingredients to Use" tone="sage" icon={<Leaf className="h-4 w-4" />} items={preset.ingredientsUse} />
@@ -112,7 +120,17 @@ function cap(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function RoutineCard({ title, icon, steps }: { title: string; icon: React.ReactNode; steps: { n: number; title: string; emoji: string; hint: string }[] }) {
+function RoutineCard({
+  title,
+  icon,
+  steps,
+  allProducts,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  steps: { n: number; title: string; emoji: string; hint: string }[];
+  allProducts?: ShopifyProduct[];
+}) {
   return (
     <div className="mt-5 rounded-2xl border border-border/70 bg-card p-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-primary">
@@ -120,16 +138,47 @@ function RoutineCard({ title, icon, steps }: { title: string; icon: React.ReactN
         {title}
       </div>
       <ul className="mt-3 space-y-2">
-        {steps.map((s) => (
-          <li key={s.n} className="flex items-center gap-3 rounded-xl bg-secondary/40 p-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{s.n}</span>
-            <span className="text-xl">{s.emoji}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">{s.title}</p>
-              <p className="truncate text-[11px] text-muted-foreground">{s.hint}</p>
-            </div>
-          </li>
-        ))}
+        {steps.map((s) => {
+          const matchedProduct = matchProductToStep(s.title, allProducts);
+          return (
+            <li key={s.n} className="flex flex-col gap-2 rounded-xl bg-secondary/40 p-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{s.n}</span>
+                <span className="text-xl">{s.emoji}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {matchedProduct ? matchedProduct.title : s.title}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">{s.hint}</p>
+                </div>
+              </div>
+              {matchedProduct && (
+                <div className="ml-10 flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/90 p-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      {matchedProduct.images?.edges?.[0]?.node?.url ? (
+                        <img src={matchedProduct.images.edges[0].node.url} alt="" className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-primary">
+                        {matchedProduct.priceRange?.minVariantPrice?.currencyCode === 'INR' ? '₹' : (matchedProduct.priceRange?.minVariantPrice?.currencyCode || '₹')} {parseFloat(matchedProduct.priceRange?.minVariantPrice?.amount || '0').toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={`https://sknpop.in/products/${matchedProduct.handle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex shrink-0 items-center justify-center rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase text-primary-foreground transition hover:opacity-90 shadow-sm"
+                  >
+                    Buy Now
+                  </a>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

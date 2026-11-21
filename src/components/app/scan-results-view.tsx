@@ -19,7 +19,7 @@ import { METRIC_META, METRIC_ORDER, normalizeMetrics, overallLabel, scoreTone } 
 import type { ScanRow } from "@/lib/skin-analysis.functions";
 import { recommendationsFor } from "@/lib/recommendations";
 import { useQuery } from "@tanstack/react-query";
-import { getShopifyRecommendations, type ShopifyProduct } from "@/lib/shopify.functions";
+import { getShopifyRecommendations, getAllShopifyProducts, type ShopifyProduct } from "@/lib/shopify.functions";
 import { ShoppingBag } from "lucide-react";
 type TabKey = "overview" | "concerns" | "analysis" | "advice";
 
@@ -342,7 +342,7 @@ function AdviceTab({ scan }: { scan: ScanRow }) {
   
   const { data: allProducts, isLoading } = useQuery({
     queryKey: ["shopify-all-products"],
-    queryFn: () => getShopifyRecommendations({ data: { concerns: ["skincare"] } }),
+    queryFn: () => getAllShopifyProducts(),
     staleTime: 1000 * 60 * 5,
   });
 
